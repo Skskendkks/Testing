@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SkyWager — HK warning nowcast</title>
+<style>
+  :root { --bg:#0f1420; --card:#1a2130; --line:#2a3450; --txt:#e8ecf4; --dim:#9aa7bd; --accent:#4cc2ff; --warn:#ffb020; --danger:#ff5c5c; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; background:var(--bg); color:var(--txt); }
+  header { padding:18px 22px; border-bottom:1px solid var(--line); display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
+  h1 { font-size:20px; margin:0; letter-spacing:.5px; }
+  h1 span { color:var(--accent); }
+  .tag { color:var(--dim); font-size:12px; }
+  .warn { color:var(--warn); font-size:12px; }
+  main { max-width:960px; margin:0 auto; padding:20px; display:grid; gap:16px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; }
+  .card h2 { margin:0 0 12px; font-size:13px; text-transform:uppercase; letter-spacing:1px; color:var(--dim); }
+  .stat { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed var(--line); font-size:14px; }
+  .stat:last-child { border-bottom:none; }
+  .stat b { font-size:16px; }
+  .bar { height:10px; background:#0d1320; border-radius:6px; overflow:hidden; margin-top:4px; }
+  .bar i { display:block; height:100%; background:linear-gradient(90deg,var(--accent),var(--warn)); border-radius:6px; }
+  .prob { margin-bottom:14px; }
+  .prob .lbl { display:flex; justify-content:space-between; font-size:14px; }
+  .prob .pct { color:var(--accent); font-weight:700; }
+  .chip { display:inline-block; background:#2a3450; border-radius:20px; padding:4px 10px; font-size:12px; margin:3px 4px 0 0; }
+  .tip { color:var(--dim); font-size:12.5px; line-height:1.5; margin:6px 0 0; }
+  svg { width:100%; height:120px; }
+  footer { max-width:960px; margin:0 auto; padding:0 20px 30px; color:var(--dim); font-size:12px; line-height:1.6; }
+  footer a { color:var(--accent); }
+  .danger { color:var(--danger); }
+  .meta { color:var(--dim); font-size:11px; margin-top:10px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Sky<span>Wager</span></h1>
+  <span class="tag">HK warning nowcast · experimental AI + rules</span>
+  <span class="warn">Unofficial — always check <a href="https://www.hko.gov.hk" style="color:var(--accent)">hko.gov.hk</a> for official warnings</span>
+</header>
+<main>
+  <div class="grid">
+    <div class="card"><h2>Current conditions</h2>
+      <div class="stat"><span>Temperature</span><b id="temp">–</b></div>
+      <div class="stat"><span>Humidity</span><b id="hum">–</b></div>
+      <div class="stat"><span>Rainfall (total)</span><b id="rain">–</b></div>
+      <div class="stat"><span>Rain last 1h / 3h</span><b id="rain13">–</b></div>
+    </div>
+    <div class="card"><h2>Official warnings</h2><div id="warnings"><span class="tip">none active</span></div></div>
+  </div>
+  <div class="card"><h2>Prediction — next 1–6h</h2><div id="preds"></div>
+    <div class="meta" id="meta"></div>
+  </div>
+  <div class="card"><h2>Special wx tips (HKO)</h2><div id="tips"><span class="tip">none</span></div></div>
+  <div class="card"><h2>Tropical cyclones (JTWC)</h2><div id="tc"><span class="tip">none near Hong Kong</span></div></div>
+  <div class="card"><h2>Last 7 days · hourly rainfall (mm)</h2><svg id="chart" viewBox="0 0 700 120" preserveAspectRatio="none"></svg></div>
+</main>
+<footer>
+  Data: HKO Open Data API (<a href="https://www.hko.gov.hk/en/abouthko/opendata_intro.htm">hko.gov.hk</a>). SkyWager predictions are experimental and not official forecasts. Do not use for safety-critical decisions — refer to official HKO warnings for work/school/evacuation decisions.
+</footer>
+<script>
+const TARGET_LABELS = {
+  rain_1h:"Rain next 1h", amber_3h:"Amber Rainstorm \u22643h",
+  red_3h:"Red Rainstorm \u22643h", tc3_6h:"TC Signal 3+ \u22646h"
+};
+async function loadJson(p){ const r = await fetch(p); if(!r.ok) throw new Error(p); return r.json(); }
+function fmtPct(p){ return Math.round(p*100)+"%"; }
+function bar(p){ const w=Math.round(Math.min(1,p)*100); return `<div class="bar"><i style="width:${w}%"></i></div>`; }
+function chart(h){
+  const W=700, H=120, pad=6;
+  const max = Math.max(1, ...h.map(d=>d.rain||0));
+  const pts = h.map((d,i)=>`${pad+(W-2*pad)*i/(h.length-1)},${H-pad-(H-2*pad)*(d.rain||0)/max}`).join(" ");
+  const area = h.length>1 ? `${pts} ${W-pad},${H-pad} ${pad},${H-pad}` : "";
+  return `<polyline points="${pts}" fill="none" stroke="#4cc2ff" stroke-width="2"/><polygon points="${area}" fill="rgba(76,194,255,.15)"/>`;
+}
+function chip(name){ return `<span class="chip">${name}</span>`; }
+(async function(){
+  const latest = await loadJson("data/latest.json");
+  const history = await loadJson("data/history.json");
+  document.title = `SkyWager — ${latest.ts.slice(0,16).replace("T"," ")} UTC`;
+  document.getElementById("temp").textContent = latest.temp_mean===""||latest.temp_mean==null?"–":latest.temp_mean+"°C";
+  document.getElementById("hum").textContent = latest.hum_mean===""||latest.hum_mean==null?"–":latest.hum_mean+"%";
+  document.getElementById("rain").textContent = latest.rain_total===""||latest.rain_total==null?"–":latest.rain_total+" mm";
+  document.getElementById("rain13").textContent = `${latest.rain_1h} / ${latest.rain_3h} mm`;
+  const wd = document.getElementById("warnings");
+  const warns = latest.active_warnings.length? latest.active_warnings.map(w=>w.split(" (")[0]) : [];
+  Object.values(latest.official_levels||{}).forEach(l=>warns.push(l));
+  wd.innerHTML = warns.length ? warns.map(chip).join("") : `<span class="tip">none active</span>`;
+  const pd = document.getElementById("preds");
+  pd.innerHTML = Object.entries(latest.predictions||{}).map(([k,p])=>
+    `<div class="prob"><div class="lbl"><span>${TARGET_LABELS[k]||k}</span><span class="pct">${fmtPct(p)}</span></div>${bar(p)}</div>`).join("");
+  document.getElementById("meta").textContent =
+    `AI model blend weight: ${latest.blend_ai_weight} · snapshot ${latest.ts} UTC`;
+  const tips = document.getElementById("tips");
+  tips.innerHTML = (latest.special_tips||[]).length ? latest.special_tips.map(chip).join("") : `<span class="tip">none</span>`;
+  const tcEl = document.getElementById("tc");
+  if(latest.tc){
+    const t = latest.tc;
+    tcEl.innerHTML = [
+      `<div class="stat"><span>${t.id} · ${t.ts}</span><b>${t.distance_km} km</b></div>`,
+      `<div class="stat"><span>Bearing from HK</span><b>${t.bearing_deg}°</b></div>`,
+      `<div class="stat"><span>Max wind</span><b>${t.wind_kts} kts</b></div>`,
+      `<div class="stat"><span>Pressure</span><b>${t.pressure_mb||"–"} mb</b></div>`,
+      t.forecast_24h_km!=null?`<div class="stat"><span>24h forecast dist</span><b>${t.forecast_24h_km} km${t.moving_toward_hk?" · closing":""}</b></div>`:""
+    ].join("");
+  } else {
+    tcEl.innerHTML = `<span class="tip">no active WP cyclone within 2500 km</span>`;
+  }
+  if(history && history.length>1) document.getElementById("chart").innerHTML = chart(history);
+  else document.getElementById("chart").outerHTML = `<div class="tip">collecting history…</div>`;
+})().catch(e=>{ document.body.innerHTML = `<main><div class="card"><h2>Data not ready</h2><p class="tip">${e} — wait for the first poll run to complete (up to 20 min), or check Actions ran successfully.</p></div></main>`; });
+</script>
+</body>
+</html>
