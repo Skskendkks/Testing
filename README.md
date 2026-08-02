@@ -50,10 +50,13 @@ app/fetch.py ──► data/snapshots.csv ──► app/train.py (scikit-learn)
    - `SMTP_USER` — your Gmail address
    - `SMTP_APP_PASSWORD` — the 16-char app password
    - `NOTIFY_TO` — the address that receives alerts (can be the same Gmail)
-4. The `pages` workflow now **enables GitHub Pages itself** (via `enablement: true`
-   on configure-pages) — you don't need to touch Settings → Pages. After the first
-   successful run you'll get a URL like `https://<you>.github.io/skywager/`.
-   (If it still fails, Settings → Pages → Source: **GitHub Actions** enables it manually.)
+4. Repo → Settings → Pages → **Build and deployment** → Source: **Deploy from a branch** →
+   Branch: `main`, folder: `/site`. GitHub builds the dashboard from the pushed `site/`
+   folder automatically (no workflow needed); the URL will be
+   `https://<you>.github.io/skywager/`. Private-repo Pages needs Pro — included in the
+   student pack. (The old `pages.yml` workflow was removed — workflow-based Pages fails
+   with "Resource not accessible by integration" because the Actions token cannot
+   create a Pages site on a private repo.)
 5. Actions will start polling on the schedule (hourly) and retraining nightly.
    To test immediately, open Actions → `poll` → Run workflow (workflow_dispatch).
    Set the `DISABLE_EMAIL` environment variable to 1 on a run if you want to test
