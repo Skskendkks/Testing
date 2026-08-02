@@ -74,5 +74,8 @@ def predict_from_row(row):
 def blend_weight(weights):
     if not weights or "meta" not in weights:
         return 0.0
+    trained = [t for t in TARGETS if weights.get(t, {}).get("coef")]
     n = weights["meta"].get("n_total", 0)
-    return max(0.0, min(0.5, (n - 200) / 800 * 0.5))
+    if not trained:
+        return 0.0
+    return max(0.2, min(0.5, 0.2 + (n - 48) / 952 * 0.3))

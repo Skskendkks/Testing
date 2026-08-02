@@ -1,6 +1,6 @@
 # SkyWager
 
-https://skskendkks.github.io/skywager/site/index.html
+<https://skskendkks.github.io/skywager/site/index.html>
 
 Unofficial Hong Kong weather-warning nowcast. Polls HKO Open Data hourly, predicts
 warning probability (rain, Amber/Red Rainstorm, Typhoon Signal 3+) using a hybrid of
@@ -34,7 +34,7 @@ app/fetch.py ──► data/snapshots.csv ──► app/train.py (scikit-learn)
   warnings, cyclone distance/wind/approach).
 - `app/train.py` — nightly: trains one balanced logistic regression per target on
   accumulated data with lookahead labels; exports coefficients + feature scaling to
-  `model/weights.json`; skips quietly until ≥200 rows / ≥5 positive samples per target.
+  `model/weights.json`; skips quietly until ≥48 rows / ≥2 positive samples per target.
 - `site/index.html` — static dashboard (GitHub Pages).
 
 ## Notification triggers
@@ -60,6 +60,7 @@ app/fetch.py ──► data/snapshots.csv ──► app/train.py (scikit-learn)
    with "Resource not accessible by integration" because the Actions token cannot
    create a Pages site on a private repo.)
 5. Actions will start polling on the schedule (hourly) and retraining nightly.
+   The AI model activates once ~2 days of snapshots (~48 rows) accumulate.
    To test immediately, open Actions → `poll` → Run workflow (workflow_dispatch).
    Set the `DISABLE_EMAIL` environment variable to 1 on a run if you want to test
    without sending mail.

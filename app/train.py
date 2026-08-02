@@ -1,6 +1,9 @@
 import csv
 import json
+import statistics
 import sys
+from collections import Counter
+from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -16,15 +19,23 @@ METRICS_JSON = MODEL_DIR / "metrics.json"
 
 ROWS_PER_HOUR = 3
 
-LOOKAHEAD = {
+LOOKAHEAD_HOURS = {
     "rain_1h": 4,
     "amber_3h": 12,
     "red_3h": 12,
     "tc3_6h": 24,
 }
 
-MIN_POSITIVES = 5
-MIN_ROWS = 200
+MIN_POSITIVES = 2
+MIN_ROWS = 48
+
+
+def rows_per_hour(rows):
+    buckets = Counter(datetime.fromisoformat(r["ts"]).strftime("%Y-%m-%dT%H") for r in rows)
+    sizes = [buckets[k] for k in buckets if buckets[k] >= 1]
+    if not sizes:
+        return 1
+    return max(1, int(round(statistics.median(sizes))))
 
 
 def load_rows():
@@ -43,7 +54,7 @@ def load_rows():
 def label(row, target):
     if target == "rain_1h":
         return 1 if _f(row, "rain_1h") > 1.0 else 0
-    look = LOOKAHEAD[target]
+    look = LOOKAHEAD_HOURS[target]
     flag_map = {"amber_3h": "w_RAIN_AMBER", "red_3h": "w_RAIN_RED", "tc3_6h": "w_TC3"}
     return 1 if _f(row, flag_map[target]) > 0 else 0
 
@@ -75,9 +86,10 @@ def main():
         raise
 
     X_all = [[_f(r, c) for c in FEATURE_COLS] for r in rows]
+    rph = rows_per_hour(rows)
     model_out = dict(out)
     for target in TARGETS:
-        horizon = LOOKAHEAD[target]
+        horizon = max(1, round(LOOKAHEAD_HOURS[target] * rph))
         ys = []
         xs = []
         for i in range(n - horizon):
