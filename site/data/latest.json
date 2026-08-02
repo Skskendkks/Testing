@@ -1,21 +1,19 @@
 {
-  "ts": "2026-08-02T09:05:32+00:00",
-  "temp_mean": 25.0,
-  "hum_mean": 95.0,
-  "rain_total": 101,
-  "rain_main": 28,
-  "rain_1h": 41.0,
-  "rain_3h": 41.0,
+  "ts": "2026-08-02T19:13:41+00:00",
+  "temp_mean": 25.1,
+  "hum_mean": 96.0,
+  "rain_total": 42,
+  "rain_main": 6,
+  "rain_1h": 0.0,
+  "rain_3h": 0.0,
   "active_warnings": [
     "Thunderstorm Warning (EXTEND)"
   ],
-  "special_tips": [
-    "Intense rain bands are persistently affecting the vicinity of the Pearl River Estuary. Widespread heavy rain may affect Hong Kong in the next few hours. Members of the public should be on the alert."
-  ],
+  "special_tips": [],
   "predictions": {
-    "rain_1h": 0.95,
-    "amber_3h": 0.95,
-    "red_3h": 0.37,
+    "rain_1h": 0.45,
+    "amber_3h": 0.4,
+    "red_3h": 0.02,
     "tc3_6h": 0.24
   },
   "official_levels": {},
