@@ -1,11 +1,11 @@
 {
-  "ts": "2026-08-02T19:13:41+00:00",
+  "ts": "2026-08-02T20:57:48+00:00",
   "temp_mean": 25.1,
-  "hum_mean": 96.0,
-  "rain_total": 42,
-  "rain_main": 6,
+  "hum_mean": 97.0,
+  "rain_total": 14,
+  "rain_main": 2,
   "rain_1h": 0.0,
-  "rain_3h": 0.0,
+  "rain_3h": -28.0,
   "active_warnings": [
     "Thunderstorm Warning (EXTEND)"
   ],
