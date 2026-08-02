@@ -13,6 +13,12 @@ from features import TARGETS, TARGET_LABELS, blend_weight, load_weights, predict
 import jtwc
 from notify import ai_alert_keys, load_notified, save_notified, send_email
 from rules import rule_probs
+import grid as gridmod
+
+try:
+    import cnn as cnnmod
+except ImportError:
+    cnnmod = None
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
@@ -288,6 +294,19 @@ def main():
     w_ai = blend_weight(weights)
     probs = blend_probs(rules_p, ai_p, w_ai)
 
+    v3 = None
+    v3_grid_ts = None
+    if cnnmod is not None:
+        try:
+            snap = gridmod.fetch_snapshot()
+            if snap:
+                v3_grid_ts = snap["ts"]
+                v3 = cnnmod.predict_frames(gridmod.lead_input(snap["leads"]))
+                if v3:
+                    probs.update(v3)
+        except Exception as e:
+            print(f"[poll] v3 cnn skipped: {e}")
+
     prev_state = None
     if LAST_WARN.exists():
         with open(LAST_WARN, encoding="utf-8-sig") as f:
@@ -347,6 +366,7 @@ def main():
         "active_warnings": active_warning_names(warnsum),
         "special_tips": weather.get("specialWxTips", []),
         "predictions": probs,
+        "v3_grid_ts": v3_grid_ts,
         "official_levels": {k: v for k, v in LEVEL_NAMES.items() if levels.get(k)},
         "tc": tc_state.get("nearest"),
         "tc_scanned": tc_state.get("scanned", []),

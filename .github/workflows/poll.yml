@@ -23,7 +23,9 @@ jobs:
           fetch-depth: 1
 
       - name: Run poller
-        run: python app/fetch.py
+        run: |
+          pip install --quiet numpy
+          python app/fetch.py
         env:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_APP_PASSWORD: ${{ secrets.SMTP_APP_PASSWORD }}

@@ -28,10 +28,13 @@ jobs:
           python-version: "3.11"
 
       - name: Install deps
-        run: pip install --quiet scikit-learn
+        run: pip install --quiet scikit-learn numpy
 
       - name: Train
         run: python app/train.py
+
+      - name: Train v3 CNN
+        run: python app/cnn.py
 
       - name: Commit model
         run: |

@@ -64,7 +64,10 @@
 <script>
 const TARGET_LABELS = {
   rain_1h:"Rain next 1h", amber_3h:"Amber Rainstorm \u22643h",
-  red_3h:"Red Rainstorm \u22643h", tc3_6h:"TC Signal 3+ \u22646h"
+  red_3h:"Red Rainstorm \u22643h", tc3_6h:"TC Signal 3+ \u22646h",
+  rain120_15mm:"Heavy rain ≥15mm/30min ~2h (CNN)",
+  rain120_25mm:"Very heavy ≥25mm/30min ~2h (CNN)",
+  rain120_35mm:"Extreme ≥35mm/30min ~2h (CNN)"
 };
 async function loadJson(p){ const r = await fetch(p); if(!r.ok) throw new Error(p); return r.json(); }
 function fmtPct(p){ return Math.round(p*100)+"%"; }
