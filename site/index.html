@@ -95,8 +95,12 @@ function chip(name){ return `<span class="chip">${name}</span>`; }
   const pd = document.getElementById("preds");
   pd.innerHTML = Object.entries(latest.predictions||{}).map(([k,p])=>
     `<div class="prob"><div class="lbl"><span>${TARGET_LABELS[k]||k}</span><span class="pct">${fmtPct(p)}</span></div>${bar(p)}</div>`).join("");
+  const bw = latest.blend_ai_weight;
+  const bwText = (bw && typeof bw === "object")
+    ? Object.entries(bw).map(([k,w])=>`${k}:${w}`).join(" ")
+    : bw;
   document.getElementById("meta").textContent =
-    `AI model blend weight: ${latest.blend_ai_weight} · snapshot ${latest.ts} UTC`;
+    `AI blend weight: ${bwText} · snapshot ${latest.ts} UTC`;
   const tips = document.getElementById("tips");
   tips.innerHTML = (latest.special_tips||[]).length ? latest.special_tips.map(chip).join("") : `<span class="tip">none</span>`;
   const tcEl = document.getElementById("tc");

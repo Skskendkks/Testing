@@ -16,7 +16,7 @@ V3_LABELS = {
 }
 THRESHOLDS_MM = [15.0, 25.0, 35.0]
 
-IN_CH = 3
+IN_CH = 5  # v4 (P7): 4 lead frames + delta(lead1-lead0); old models used 3
 SIZE = 32
 F1, F2, HID = 8, 16, 32
 INPUT_SCALE = 50.0
@@ -24,6 +24,25 @@ INPUT_SCALE = 50.0
 
 def relu(x):
     return np.maximum(x, 0.0)
+
+
+def average_precision(y, s):
+    y = np.asarray(y, dtype=float)
+    s = np.asarray(s, dtype=float)
+    n_pos = y.sum()
+    if n_pos == 0:
+        return 0.0
+    order = np.argsort(-s, kind="stable")
+    y = y[order]
+    tp = np.cumsum(y)
+    prec = tp / (np.arange(len(y)) + 1)
+    return float((prec * y).sum() / n_pos)
+
+
+def brier(y, p):
+    y = np.asarray(y, dtype=float)
+    p = np.asarray(p, dtype=float)
+    return float(np.mean((p - y) ** 2))
 
 
 def sigmoid(x):
@@ -91,10 +110,10 @@ def maxpool2x2_back(dout, X):
     return dXr.reshape(N, C, H, W)
 
 
-def init_weights(seed=0):
+def init_weights(seed=0, in_ch=IN_CH):
     rng = np.random.default_rng(seed)
     return [
-        rng.normal(0, 0.15, (F1, IN_CH, 3, 3)).astype(np.float32),
+        rng.normal(0, 0.15, (F1, in_ch, 3, 3)).astype(np.float32),
         np.zeros(F1, dtype=np.float32),
         rng.normal(0, 0.15, (F2, F1, 3, 3)).astype(np.float32),
         np.zeros(F2, dtype=np.float32),
@@ -131,15 +150,22 @@ def predict(X, weights):
     return forward(X, weights)
 
 
-def train(X, y, epochs=40, batch=32, lr=0.05, momentum=0.9, seed=0, val_frac=0.1, quiet=False):
+def train(X, y, B=None, epochs=40, batch=32, lr=0.05, momentum=0.9, seed=0, val_frac=0.2, quiet=False):
+    """Time-ordered split (data is time-sorted; last val_frac is validation).
+
+    B: per-sample advection/persistence baseline (max mm of the current ~2h lead
+    frame). The CNN only counts as skillful on a target if it beats this baseline
+    on PR-AUC and Brier (P7).
+    """
     X = X.astype(np.float32)
     y = y.astype(np.float32)
     n = X.shape[0]
     n_val = max(1, int(n * val_frac))
     Xtr, Xva = X[:n - n_val], X[n - n_val:]
     ytr, yva = y[:n - n_val], y[n - n_val:]
+    Bva = np.asarray(B[n - n_val:], dtype=np.float32) if B is not None else None
 
-    weights = init_weights(seed)
+    weights = init_weights(seed, in_ch=X.shape[1])
     vels = [np.zeros_like(w) for w in weights]
     best = (None, float("inf"))
 
@@ -193,15 +219,41 @@ def train(X, y, epochs=40, batch=32, lr=0.05, momentum=0.9, seed=0, val_frac=0.1
         acc = (tp + tn) / max(1, tp + tn + fp + fn)
         prec = tp / max(1, tp + fp)
         rec = tp / max(1, tp + fn)
-        metrics[t] = {"val_acc": round(acc, 3), "val_precision": round(prec, 3), "val_recall": round(rec, 3), "n_pos": int(yva[:, k].sum())}
-        print(f"[cnn] {t}: val_acc={acc:.3f} prec={prec:.3f} rec={rec:.3f} (n_val={n_val}, pos={int(yva[:, k].sum())})")
+        m = {
+            "val_acc": round(acc, 3),
+            "val_precision": round(prec, 3),
+            "val_recall": round(rec, 3),
+            "n_pos": int(yva[:, k].sum()),
+            "pr_auc": round(average_precision(yva[:, k], pva[:, k]), 4),
+            "brier": round(brier(yva[:, k], pva[:, k]), 4),
+        }
+        if Bva is not None:
+            base_p = (Bva >= THRESHOLDS_MM[k]).astype(np.float32)
+            m["baseline_pr_auc"] = round(average_precision(yva[:, k], base_p), 4)
+            m["baseline_brier"] = round(brier(yva[:, k], base_p), 4)
+            m["beats_baseline"] = bool(
+                m["pr_auc"] >= m["baseline_pr_auc"] and m["brier"] <= m["baseline_brier"]
+                and (m["pr_auc"] > m["baseline_pr_auc"] or m["brier"] < m["baseline_brier"])
+            )
+        metrics[t] = m
+        base_note = ""
+        if "beats_baseline" in m:
+            base_note = (f" | baseline PR-AUC={m['baseline_pr_auc']} Brier={m['baseline_brier']} "
+                         f"-> {'BEATS' if m['beats_baseline'] else 'does NOT beat'} advection baseline")
+        print(f"[cnn] {t}: PR-AUC={m['pr_auc']} Brier={m['brier']} acc={acc:.3f} prec={prec:.3f} "
+              f"rec={rec:.3f} (n_val={n_val}, pos={m['n_pos']}){base_note}")
     return weights, metrics
 
 
 def save_weights(weights, metrics, n_total):
     MODEL_DIR.mkdir(exist_ok=True)
     payload = {
-        "meta": {"n_total": n_total, "generated": __import__("datetime").datetime.now().isoformat(timespec="seconds")},
+        "meta": {
+            "n_total": n_total,
+            "generated": __import__("datetime").datetime.now().isoformat(timespec="seconds"),
+            "in_ch": int(weights[0].shape[1]),
+            "input_scale": INPUT_SCALE,
+        },
         "v3_targets": V3_TARGETS,
         "thresholds_mm": THRESHOLDS_MM,
         "input_scale": INPUT_SCALE,
@@ -225,20 +277,41 @@ def weights_to_list(payload):
     return [np.array(w, dtype=np.float32) for w in payload["w1"]]
 
 
-def predict_frames(frames, payload=None):
+def predict_frames(leads, payload=None):
+    """Predict from a live snapshot's lead frames.
+
+    Builds the channel stack the loaded model expects (meta.in_ch: 5 = 4 leads +
+    delta, 3 = legacy leads[:3]). Targets whose training metrics show the CNN did
+    not beat the advection baseline are dropped (P7).
+    """
     if payload is None:
         payload = load_weights()
     if not payload:
         return None
-    if len(frames) < IN_CH:
-        return None
-    x = np.zeros((1, IN_CH, SIZE, SIZE), dtype=np.float32)
-    for i in range(IN_CH):
-        g = frames[i]
-        x[0, i] = np.array(g, dtype=np.float32) / payload["meta"].get("input_scale", INPUT_SCALE)
-    x = np.clip(x, 0, 1)
-    p = forward(x, weights_to_list(payload))[0]
-    return {t: round(float(p[k]), 3) for k, t in enumerate(V3_TARGETS)}
+    in_ch = int(payload.get("meta", {}).get("in_ch", 3))
+    scale = payload.get("meta", {}).get("input_scale", payload.get("input_scale", INPUT_SCALE))
+    if in_ch == 5:
+        if len(leads) < 4:
+            return None
+        frames = [np.array(g, dtype=np.float32) for g in leads[:4]]
+        delta = frames[1] - frames[0]
+        x = np.stack(frames + [delta])[None] / scale
+        x[:, :4] = np.clip(x[:, :4], 0.0, 1.0)
+        x[:, 4] = np.clip(x[:, 4], -1.0, 1.0)
+    else:
+        if len(leads) < in_ch:
+            return None
+        x = np.zeros((1, in_ch, SIZE, SIZE), dtype=np.float32)
+        for i in range(in_ch):
+            x[0, i] = np.array(leads[i], dtype=np.float32) / scale
+        x = np.clip(x, 0, 1)
+    p = forward(x.astype(np.float32), weights_to_list(payload))[0]
+    out = {}
+    for k, t in enumerate(V3_TARGETS):
+        if payload.get(t, {}).get("beats_baseline", True) is False:
+            continue
+        out[t] = round(float(p[k]), 3)
+    return out or None
 
 
 def main():
@@ -248,8 +321,14 @@ def main():
         return
     d = np.load(npz_path)
     X, y = d["X"], d["y"]
-    print(f"[cnn] dataset: {X.shape[0]} samples")
-    weights, metrics = train(X, y)
+    B = d["B"] if "B" in d else None
+    if X.shape[1] != IN_CH:
+        print(f"[cnn] note: dataset has {X.shape[1]} channels (v4 expects {IN_CH}) — "
+              "re-run app/backfill.py to rebuild with real-future labels + baseline")
+    if B is None:
+        print("[cnn] note: dataset has no baseline column — advection-baseline check skipped")
+    print(f"[cnn] dataset: {X.shape[0]} samples, {X.shape[1]} channels")
+    weights, metrics = train(X, y, B=B)
     save_weights(weights, metrics, int(X.shape[0]))
     print("[cnn] saved model/cnn_weights.json")
 

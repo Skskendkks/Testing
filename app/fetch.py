@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from features import TARGETS, TARGET_LABELS, blend_weight, load_weights, predict_from_row
+from features import TARGETS, TARGET_LABELS, blend_weights, predict_ai
 import jtwc
 from notify import ai_alert_keys, load_notified, save_notified, send_email
 from rules import rule_probs
@@ -65,6 +65,10 @@ CSV_COLUMNS = [
     "tc_wind_kts",
     "tc_24h_dist_km",
     "tc_trend_toward",
+    "tc_dist_rate",
+    "f3_max",
+    "f3_mean",
+    "f3_trend",
 ]
 
 WARNSUMS_TO_FLAGS = {
@@ -135,7 +139,20 @@ def _f(row, key):
     return float(row.get(key, 0.0) or 0.0)
 
 
-def build_row(weather, warnsum, messages, levels, prior_rows, tc_feats):
+def f3_features(leads):
+    """P6: scalar summaries of the F3 gridded nowcast for the tabular models."""
+    if not leads:
+        return {"f3_max": 0.0, "f3_mean": 0.0, "f3_trend": 0.0}
+    maxes = [max(max(r) for r in g) for g in leads]
+    means = [sum(sum(r) for r in g) / (len(g) * len(g[0])) for g in leads]
+    return {
+        "f3_max": round(max(maxes), 2),
+        "f3_mean": round(sum(means) / len(means), 3),
+        "f3_trend": round(maxes[-1] - maxes[0], 2),
+    }
+
+
+def build_row(weather, warnsum, messages, levels, prior_rows, tc_feats, f3_feats=None):
     now = datetime.now(timezone.utc)
     temps = [d["value"] for d in weather.get("temperature", {}).get("data", []) if isinstance(d.get("value"), (int, float))]
     hums = [d["value"] for d in weather.get("humidity", {}).get("data", []) if isinstance(d.get("value"), (int, float))]
@@ -172,15 +189,24 @@ def build_row(weather, warnsum, messages, levels, prior_rows, tc_feats):
         row[flag] = 1 if levels.get(flag) else 0
     for key, value in tc_feats.items():
         row[key] = value
+    # P6: JTWC distance rate of change (km/h; negative = approaching)
+    prev_dist = _f(recent_60[0], "tc_dist_km") if recent_60 and recent_60[0].get("tc_dist_km") not in ("", None) else None
+    row["tc_dist_rate"] = round(tc_feats.get("tc_dist_km", 2000) - prev_dist, 1) if prev_dist else 0.0
+    for key, value in (f3_feats or f3_features(None)).items():
+        row[key] = value
     return row, temps, hums, rains
 
 
-def blend_probs(rules_p, ai_p, w_ai):
+def blend_probs(rules_p, ai_p, w_map):
+    """P5: per-target learned blend weight (falls back to rules where AI is absent)."""
     out = {}
     for t in TARGETS:
         r = rules_p.get(t, 0.0)
-        a = ai_p.get(t, 0.0)
-        out[t] = round(r * (1 - w_ai) + a * w_ai, 3)
+        if t in ai_p:
+            w = w_map.get(t, 0.0)
+            out[t] = round(r * (1 - w) + ai_p[t] * w, 3)
+        else:
+            out[t] = round(r, 3)
     return out
 
 
@@ -285,25 +311,29 @@ def main():
     tc_state = jtwc.scan()
     tc_feats = jtwc.snapshot_features(tc_state)
 
+    snap = None
+    try:
+        snap = gridmod.fetch_snapshot()
+    except Exception as e:
+        print(f"[poll] F3 grid fetch skipped: {e}")
+
     rows = load_csv_rows()
-    row, temps, hums, rains = build_row(weather, warnsum, messages, levels, rows, tc_feats)
+    f3_feats = f3_features(snap["leads"]) if snap else None
+    row, temps, hums, rains = build_row(weather, warnsum, messages, levels, rows, tc_feats, f3_feats)
 
     rules_p = rule_probs(row)
-    weights = load_weights()
-    ai_p = predict_from_row(row)
-    w_ai = blend_weight(weights)
-    probs = blend_probs(rules_p, ai_p, w_ai)
+    ai_p = predict_ai(row)
+    w_map = blend_weights()
+    probs = blend_probs(rules_p, ai_p, w_map)
 
     v3 = None
     v3_grid_ts = None
-    if cnnmod is not None:
+    if cnnmod is not None and snap:
         try:
-            snap = gridmod.fetch_snapshot()
-            if snap:
-                v3_grid_ts = snap["ts"]
-                v3 = cnnmod.predict_frames(gridmod.lead_input(snap["leads"]))
-                if v3:
-                    probs.update(v3)
+            v3_grid_ts = snap["ts"]
+            v3 = cnnmod.predict_frames(snap["leads"])
+            if v3:
+                probs.update(v3)
         except Exception as e:
             print(f"[poll] v3 cnn skipped: {e}")
 
@@ -370,7 +400,7 @@ def main():
         "official_levels": {k: v for k, v in LEVEL_NAMES.items() if levels.get(k)},
         "tc": tc_state.get("nearest"),
         "tc_scanned": tc_state.get("scanned", []),
-        "blend_ai_weight": round(w_ai, 2),
+        "blend_ai_weight": {t: round(w_map.get(t, 0.0), 2) for t in TARGETS},
     })
     write_json(HISTORY_JSON, build_history(rows))
     write_json(SITE_DATA_DIR / "latest.json", json.loads(LATEST_JSON.read_text(encoding="utf-8")))
