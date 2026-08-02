@@ -50,9 +50,10 @@ app/fetch.py ──► data/snapshots.csv ──► app/train.py (scikit-learn)
    - `SMTP_USER` — your Gmail address
    - `SMTP_APP_PASSWORD` — the 16-char app password
    - `NOTIFY_TO` — the address that receives alerts (can be the same Gmail)
-4. Repo → Settings → Pages → Source: **GitHub Actions**. The `pages` workflow will
-   publish `site/` after the first push; you'll get a URL like
-   `https://<you>.github.io/skywager/`.
+4. The `pages` workflow now **enables GitHub Pages itself** (via `enablement: true`
+   on configure-pages) — you don't need to touch Settings → Pages. After the first
+   successful run you'll get a URL like `https://<you>.github.io/skywager/`.
+   (If it still fails, Settings → Pages → Source: **GitHub Actions** enables it manually.)
 5. Actions will start polling on the schedule (hourly) and retraining nightly.
    To test immediately, open Actions → `poll` → Run workflow (workflow_dispatch).
    Set the `DISABLE_EMAIL` environment variable to 1 on a run if you want to test
