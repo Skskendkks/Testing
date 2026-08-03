@@ -1,11 +1,11 @@
 {
-  "ts": "2026-08-02T21:44:33+00:00",
-  "temp_mean": 28.5,
-  "hum_mean": 85.0,
+  "ts": "2026-08-03T08:31:04+00:00",
+  "temp_mean": 28.3,
+  "hum_mean": 82.0,
   "rain_total": 0,
   "rain_main": 0,
-  "rain_1h": -14.0,
-  "rain_3h": -42.0,
+  "rain_1h": 0.0,
+  "rain_3h": 0.0,
   "active_warnings": [],
   "special_tips": [],
   "predictions": {
@@ -13,13 +13,18 @@
     "amber_3h": 0.05,
     "red_3h": 0.02,
     "tc3_6h": 0.24,
-    "rain120_15mm": 0.034,
-    "rain120_25mm": 0.007,
-    "rain120_35mm": 0.003
+    "rain120_15mm": 0.015,
+    "rain120_25mm": 0.006,
+    "rain120_35mm": 0.002
   },
-  "v3_grid_ts": "202608031354",
+  "v3_grid_ts": "202608031642",
   "official_levels": {},
   "tc": null,
   "tc_scanned": [],
-  "blend_ai_weight": 0.0
+  "blend_ai_weight": {
+    "rain_1h": 0.0,
+    "amber_3h": 0.0,
+    "red_3h": 0.0,
+    "tc3_6h": 0.0
+  }
 }
