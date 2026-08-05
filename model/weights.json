@@ -1,7 +1,7 @@
 {
   "meta": {
-    "n_total": 40,
-    "generated": "2026-08-05T17:41:33",
-    "note": "only 40 rows; need 48 to train \u2014 rules-only mode"
+    "n_total": 41,
+    "generated": "2026-08-05T19:38:53",
+    "note": "only 41 rows; need 48 to train \u2014 rules-only mode"
   }
 }
