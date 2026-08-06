@@ -1,7 +1,7 @@
 {
-  "ts": "2026-08-06T05:51:24+00:00",
-  "temp_mean": 32.0,
-  "hum_mean": 62.0,
+  "ts": "2026-08-06T08:39:58+00:00",
+  "temp_mean": 32.2,
+  "hum_mean": 56.0,
   "rain_total": 0,
   "rain_main": 0,
   "rain_1h": 0.0,
@@ -9,19 +9,17 @@
   "active_warnings": [
     "Very Hot Weather Warning (REISSUE)"
   ],
-  "special_tips": [
-    "The area of low pressure near Hainan Island will move in the general direction of the central and northern parts of the South China Sea today and tomorrow (6 and 7 August). It will bring unsettled weather to the region, while maintaining quite some distance from Hong Kong. The Observatory will closely monitor its intensity and movement. \n\nWinds are still expected to be weak over the territory today and tomorrow. High temperatures will persist over the next few days. Under the influence of the outer subsiding air of Tropical Cyclone Dolphin, the weather will be extremely hot over the weekend. Temperatures will reach 36 degrees or above over parts of the New Territories. Members of the public should pay due attention to physical conditions and beware of heat stroke, especially when engaging in outdoor activities."
-  ],
+  "special_tips": [],
   "predictions": {
     "rain_1h": 0.1,
     "amber_3h": 0.05,
     "red_3h": 0.02,
     "tc3_6h": 0.24,
-    "rain120_15mm": 0.002,
-    "rain120_25mm": 0.001,
-    "rain120_35mm": 0.0
+    "rain120_15mm": 0.052,
+    "rain120_25mm": 0.009,
+    "rain120_35mm": 0.007
   },
-  "v3_grid_ts": "202608061406",
+  "v3_grid_ts": "202608061654",
   "official_levels": {},
   "tc": null,
   "tc_scanned": [],
