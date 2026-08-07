@@ -1,7 +1,7 @@
 {
-  "ts": "2026-08-07T21:40:59+00:00",
-  "temp_mean": 28.3,
-  "hum_mean": 86.0,
+  "ts": "2026-08-07T22:38:14+00:00",
+  "temp_mean": 28.4,
+  "hum_mean": 87.0,
   "rain_total": 0,
   "rain_main": 0,
   "rain_1h": 0.0,
@@ -9,11 +9,9 @@
   "active_warnings": [
     "Very Hot Weather Warning (REISSUE)"
   ],
-  "special_tips": [
-    "The area of low pressure over Beibu Wan has intensified into a tropical depression. The circulation of the tropical depression is small. It is expected to move across Hainan Island and weaken gradually today, maintaining quite some distance from Hong Kong. Its direct threat to Hong Kong is not high. Unless the tropical depression adopts a track closer to the coast of Guangdong, the chance of issuing the Standby Signal, No. 1 is rather low. The Observatory will closely monitor its intensity and movement."
-  ],
+  "special_tips": [],
   "predictions": {
-    "rain_1h": 0.2,
+    "rain_1h": 0.1,
     "amber_3h": 0.05,
     "red_3h": 0.02,
     "tc3_6h": 0.24,
@@ -21,7 +19,7 @@
     "rain120_25mm": 0.001,
     "rain120_35mm": 0.0
   },
-  "v3_grid_ts": "202608080554",
+  "v3_grid_ts": "202608080654",
   "official_levels": {},
   "tc": null,
   "tc_scanned": [],
