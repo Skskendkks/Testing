@@ -1,6 +1,6 @@
 {
-  "n_total": 58,
-  "generated": "2026-08-07T15:58:56",
+  "n_total": 59,
+  "generated": "2026-08-07T17:01:44",
   "targets": {
     "rain_1h": {
       "n_samples": 13,
@@ -18,13 +18,13 @@
       "status": "skipped (0 positives < 4 or too few rows)"
     },
     "tc3_6h": {
-      "n_samples": 52,
+      "n_samples": 53,
       "n_pos": 0,
       "status": "skipped (0 positives < 4 or too few rows)"
     }
   },
   "train_range": [
     "2026-08-02T08:50:11+00:00",
-    "2026-08-07T15:58:32+00:00"
+    "2026-08-07T17:01:16+00:00"
   ]
 }
