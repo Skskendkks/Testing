@@ -1,7 +1,7 @@
 {
-  "ts": "2026-08-07T05:42:20+00:00",
-  "temp_mean": 33.3,
-  "hum_mean": 64.0,
+  "ts": "2026-08-07T07:19:23+00:00",
+  "temp_mean": 33.7,
+  "hum_mean": 57.0,
   "rain_total": 0,
   "rain_main": 0,
   "rain_1h": 0.0,
@@ -9,9 +9,7 @@
   "active_warnings": [
     "Very Hot Weather Warning (REISSUE)"
   ],
-  "special_tips": [
-    "With Tropical Cyclone Dolphin moving towards the vicinity of Zhejiang and northern Fujian, its outer subsiding air will persistently bring extremely hot weather to the territory during the weekend and on next Monday. Temperatures in some areas will reach 37 degrees or above. High temperature weather is expected to continue midweek next week.\n\nMembers of the public please pay attention to health conditions. Drink more water and take all necessary protective measures against the heat. Avoid vigorous outdoor physical activities. If symptoms such as dizziness, headache, nausea, shortness of breath or confusion develop, take rest and seek help immediately, and seek medical advice as soon as possible."
-  ],
+  "special_tips": [],
   "predictions": {
     "rain_1h": 0.1,
     "amber_3h": 0.05,
@@ -21,7 +19,7 @@
     "rain120_25mm": 0.009,
     "rain120_35mm": 0.007
   },
-  "v3_grid_ts": "202608071354",
+  "v3_grid_ts": "202608071530",
   "official_levels": {},
   "tc": null,
   "tc_scanned": [],
