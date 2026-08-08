@@ -1,9 +1,9 @@
 {
-  "n_total": 68,
-  "generated": "2026-08-08T04:59:43",
+  "n_total": 69,
+  "generated": "2026-08-08T05:51:25",
   "targets": {
     "rain_1h": {
-      "n_samples": 18,
+      "n_samples": 19,
       "n_pos": 8,
       "status": "skipped (8 positives < 4 or too few rows)"
     },
@@ -25,6 +25,6 @@
   },
   "train_range": [
     "2026-08-02T08:50:11+00:00",
-    "2026-08-08T04:59:19+00:00"
+    "2026-08-08T05:50:59+00:00"
   ]
 }
