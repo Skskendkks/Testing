@@ -1,6 +1,6 @@
 {
-  "ts": "2026-08-09T17:33:35+00:00",
-  "temp_mean": 32.0,
+  "ts": "2026-08-09T18:43:33+00:00",
+  "temp_mean": 31.8,
   "hum_mean": 66.0,
   "rain_total": 0,
   "rain_main": 0,
@@ -19,7 +19,7 @@
     "rain120_25mm": 0.001,
     "rain120_35mm": 0.0
   },
-  "v3_grid_ts": "202608100142",
+  "v3_grid_ts": "202608100254",
   "official_levels": {},
   "tc": null,
   "tc_scanned": [],
