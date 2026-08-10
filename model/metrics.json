@@ -1,19 +1,21 @@
 {
-  "n_total": 120,
-  "generated": "2026-08-10T19:58:13",
+  "n_total": 121,
+  "generated": "2026-08-10T20:54:59",
   "targets": {
     "rain_1h": {
-      "n_samples": 47,
+      "n_samples": 48,
       "n_pos": 8,
-      "status": "skipped (8 positives < 4 or too few rows)"
+      "n_val": 10,
+      "n_val_pos": 0,
+      "status": "skipped (a fold has a single class \u2014 need more positives)"
     },
     "amber_3h": {
-      "n_samples": 104,
+      "n_samples": 105,
       "n_pos": 3,
       "status": "skipped (3 positives < 4 or too few rows)"
     },
     "red_3h": {
-      "n_samples": 104,
+      "n_samples": 105,
       "n_pos": 0,
       "status": "skipped (0 positives < 4 or too few rows)"
     },
@@ -25,6 +27,6 @@
   },
   "train_range": [
     "2026-08-02T08:50:11+00:00",
-    "2026-08-10T19:57:45+00:00"
+    "2026-08-10T20:54:26+00:00"
   ]
 }
