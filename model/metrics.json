@@ -1,19 +1,19 @@
 {
-  "n_total": 117,
-  "generated": "2026-08-10T16:56:15",
+  "n_total": 118,
+  "generated": "2026-08-10T17:53:52",
   "targets": {
     "rain_1h": {
-      "n_samples": 45,
+      "n_samples": 46,
       "n_pos": 8,
       "status": "skipped (8 positives < 4 or too few rows)"
     },
     "amber_3h": {
-      "n_samples": 102,
+      "n_samples": 103,
       "n_pos": 3,
       "status": "skipped (3 positives < 4 or too few rows)"
     },
     "red_3h": {
-      "n_samples": 102,
+      "n_samples": 103,
       "n_pos": 0,
       "status": "skipped (0 positives < 4 or too few rows)"
     },
@@ -25,6 +25,6 @@
   },
   "train_range": [
     "2026-08-02T08:50:11+00:00",
-    "2026-08-10T16:55:35+00:00"
+    "2026-08-10T17:53:25+00:00"
   ]
 }
