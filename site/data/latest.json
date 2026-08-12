@@ -1,7 +1,7 @@
 {
-  "ts": "2026-08-12T08:19:32+00:00",
-  "temp_mean": 33.8,
-  "hum_mean": 65.0,
+  "ts": "2026-08-12T10:08:07+00:00",
+  "temp_mean": 32.2,
+  "hum_mean": 69.0,
   "rain_total": 0,
   "rain_main": 0,
   "rain_1h": 0.0,
@@ -9,17 +9,19 @@
   "active_warnings": [
     "Very Hot Weather Warning (REISSUE)"
   ],
-  "special_tips": [],
+  "special_tips": [
+    "A southwesterly airstream is affecting the coast of Guangdong gradually. It is slightly cloudier with isolated showers over the region. The extremely hot weather will be alleviated slightly. Locally, it will still be very hot with sunny periods tomorrow. The maximum temperature will be around 34 degrees in the urban areas, and a couple of degrees higher in the New Territories. Members of the public please continue to pay attention to health conditions. Drink more water and take all necessary protective measures against the heat. If feeling unwell, take rest and seek help immediately, and seek medical advice as soon as possible.\n\nUnder the influence of upper-air disturbances, there will be more showers with squally thunderstorms in some areas on Friday. There will still be a few showers and sunny intervals over the weekend."
+  ],
   "predictions": {
     "rain_1h": 0.1,
     "amber_3h": 0.05,
     "red_3h": 0.02,
     "tc3_6h": 0.24,
-    "rain120_15mm": 0.002,
-    "rain120_25mm": 0.001,
-    "rain120_35mm": 0.0
+    "rain120_15mm": 0.052,
+    "rain120_25mm": 0.009,
+    "rain120_35mm": 0.007
   },
-  "v3_grid_ts": "202608121630",
+  "v3_grid_ts": "202608121818",
   "official_levels": {},
   "tc": null,
   "tc_scanned": [],
