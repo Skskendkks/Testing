@@ -1,10 +1,10 @@
 {
   "meta": {
-    "n_total": 169,
-    "generated": "2026-08-13T22:44:45"
+    "n_total": 170,
+    "generated": "2026-08-13T23:43:40"
   },
   "targets": {
-    "rain_1h": 1.0,
+    "rain_1h": 0.4,
     "amber_3h": 0.0,
     "red_3h": 0.0,
     "tc3_6h": 0.0
