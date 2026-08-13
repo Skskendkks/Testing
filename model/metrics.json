@@ -1,6 +1,6 @@
 {
-  "n_total": 159,
-  "generated": "2026-08-13T08:23:15",
+  "n_total": 160,
+  "generated": "2026-08-13T10:09:59",
   "targets": {
     "rain_1h": {
       "n_samples": 54,
@@ -10,23 +10,23 @@
       "status": "skipped (a fold has a single class \u2014 need more positives)"
     },
     "amber_3h": {
-      "n_samples": 144,
+      "n_samples": 145,
       "n_pos": 3,
       "status": "skipped (3 positives < 4 or too few rows)"
     },
     "red_3h": {
-      "n_samples": 144,
+      "n_samples": 145,
       "n_pos": 0,
       "status": "skipped (0 positives < 4 or too few rows)"
     },
     "tc3_6h": {
-      "n_samples": 154,
+      "n_samples": 155,
       "n_pos": 0,
       "status": "skipped (0 positives < 4 or too few rows)"
     }
   },
   "train_range": [
     "2026-08-02T08:50:11+00:00",
-    "2026-08-13T08:22:49+00:00"
+    "2026-08-13T10:09:35+00:00"
   ]
 }
