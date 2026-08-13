@@ -38,7 +38,7 @@ jobs:
 
       - name: Commit model
         run: |
-          git config user.name "skywager-bot"
+          git config user.name "testing-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add model
           git diff --cached --quiet || git commit -m "retrain: $(date -u +%Y-%m-%dT%H:%MZ)"

@@ -58,7 +58,7 @@ app/fetch.py ──► data/snapshots.csv ──► app/train.py (scikit-learn)
 
 ## Setup
 
-1. Create a **private** repo named `skywager`, push this folder to it.
+1. Create a **private** repo named `testing`, push this folder to it.
 2. Create a **Gmail app password** (Google Account → Security → 2-Step Verification →
    App passwords) — needed because GitHub Actions can't use your normal Gmail login.
 3. Repo → Settings → Secrets and variables → Actions → add:
@@ -68,7 +68,7 @@ app/fetch.py ──► data/snapshots.csv ──► app/train.py (scikit-learn)
 4. Repo → Settings → Pages → **Build and deployment** → Source: **Deploy from a branch** →
    Branch: `main`, folder: `/site`. GitHub builds the dashboard from the pushed `site/`
    folder automatically (no workflow needed); the URL will be
-   `https://<you>.github.io/skywager/`. Private-repo Pages needs Pro — included in the
+   `https://<you>.github.io/testing/`. Private-repo Pages needs Pro — included in the
    student pack. (The old `pages.yml` workflow was removed — workflow-based Pages fails
    with "Resource not accessible by integration" because the Actions token cannot
    create a Pages site on a private repo.)

@@ -33,7 +33,7 @@ jobs:
 
       - name: Commit data
         run: |
-          git config user.name "skywager-bot"
+          git config user.name "testing-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data state site
           git diff --cached --quiet || git commit -m "poll: $(date -u +%Y-%m-%dT%H:%MZ)"

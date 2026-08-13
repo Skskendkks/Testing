@@ -54,7 +54,7 @@ HK_OFFSET = timedelta(hours=8)
 
 
 def http_get_bytes(url):
-    req = urllib.request.Request(url, headers={"User-Agent": "SkyWager/1.0 (personal weather nowcast)"})
+    req = urllib.request.Request(url, headers={"User-Agent": "Testing/1.0 (personal weather nowcast)"})
     with urllib.request.urlopen(req, timeout=300) as resp:
         return resp.read()
 

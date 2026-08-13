@@ -14,7 +14,7 @@ N_LEADS = 4
 
 
 def http_get(url):
-    req = urllib.request.Request(url, headers={"User-Agent": "SkyWager/1.0 (personal weather nowcast)"})
+    req = urllib.request.Request(url, headers={"User-Agent": "Testing/1.0 (personal weather nowcast)"})
     with urllib.request.urlopen(req, timeout=30) as resp:
         return resp.read().decode("utf-8")
 

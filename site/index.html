@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SkyWager — HK warning nowcast</title>
+<title>Testing — HK warning nowcast</title>
 <style>
   :root { --bg:#0f1420; --card:#1a2130; --line:#2a3450; --txt:#e8ecf4; --dim:#9aa7bd; --accent:#4cc2ff; --warn:#ffb020; --danger:#ff5c5c; }
   * { box-sizing:border-box; }
@@ -36,7 +36,7 @@
 </head>
 <body>
 <header>
-  <h1>Sky<span>Wager</span></h1>
+  <h1>Test<span>ing</span></h1>
   <span class="tag">HK warning nowcast · experimental AI + rules</span>
   <span class="warn">Unofficial — always check <a href="https://www.hko.gov.hk" style="color:var(--accent)">hko.gov.hk</a> for official warnings</span>
 </header>
@@ -58,8 +58,8 @@
   <div class="card"><h2>Last 7 days · hourly rainfall (mm)</h2><svg id="chart" viewBox="0 0 700 120" preserveAspectRatio="none"></svg></div>
 </main>
 <footer>
-  Data: HKO Open Data API (<a href="https://www.hko.gov.hk/en/abouthko/opendata_intro.htm">hko.gov.hk</a>) · Cyclone tracks: NOAA ATCF (JTWC). SkyWager predictions are experimental and not official forecasts. Do not use for safety-critical decisions — refer to official HKO warnings for work/school/evacuation decisions.
-  <br><a href="https://github.com/Skskendkks/skywager">View source on GitHub</a>
+  Data: HKO Open Data API (<a href="https://www.hko.gov.hk/en/abouthko/opendata_intro.htm">hko.gov.hk</a>) · Cyclone tracks: NOAA ATCF (JTWC). Testing predictions are experimental and not official forecasts. Do not use for safety-critical decisions — refer to official HKO warnings for work/school/evacuation decisions.
+  <br><a href="https://github.com/Skskendkks/testing">View source on GitHub</a>
 </footer>
 <script>
 const TARGET_LABELS = {
@@ -80,10 +80,14 @@ function chart(h){
   return `<polyline points="${pts}" fill="none" stroke="#4cc2ff" stroke-width="2"/><polygon points="${area}" fill="rgba(76,194,255,.15)"/>`;
 }
 function chip(name){ return `<span class="chip">${name}</span>`; }
+function fmtHKT(iso){
+  const hk = new Date(new Date(iso).getTime() + 8*3600*1000);
+  return hk.toISOString().slice(0,16).replace("T"," ");
+}
 (async function(){
   const latest = await loadJson("data/latest.json");
   const history = await loadJson("data/history.json");
-  document.title = `SkyWager — ${latest.ts.slice(0,16).replace("T"," ")} UTC`;
+  document.title = `Testing — ${fmtHKT(latest.ts)} HKT`;
   document.getElementById("temp").textContent = latest.temp_mean===""||latest.temp_mean==null?"–":latest.temp_mean+"°C";
   document.getElementById("hum").textContent = latest.hum_mean===""||latest.hum_mean==null?"–":latest.hum_mean+"%";
   document.getElementById("rain").textContent = latest.rain_total===""||latest.rain_total==null?"–":latest.rain_total+" mm";
@@ -100,14 +104,14 @@ function chip(name){ return `<span class="chip">${name}</span>`; }
     ? Object.entries(bw).map(([k,w])=>`${k}:${w}`).join(" ")
     : bw;
   document.getElementById("meta").textContent =
-    `AI blend weight: ${bwText} · snapshot ${latest.ts} UTC`;
+    `AI blend weight: ${bwText} · snapshot ${fmtHKT(latest.ts)} HKT`;
   const tips = document.getElementById("tips");
   tips.innerHTML = (latest.special_tips||[]).length ? latest.special_tips.map(chip).join("") : `<span class="tip">none</span>`;
   const tcEl = document.getElementById("tc");
   if(latest.tc){
     const t = latest.tc;
     tcEl.innerHTML = [
-      `<div class="stat"><span>${t.id} · ${t.ts}</span><b>${t.distance_km} km</b></div>`,
+      `<div class="stat"><span>${t.id} · ${fmtHKT(t.ts)} HKT</span><b>${t.distance_km} km</b></div>`,
       `<div class="stat"><span>Bearing from HK</span><b>${t.bearing_deg}°</b></div>`,
       `<div class="stat"><span>Max wind</span><b>${t.wind_kts} kts</b></div>`,
       `<div class="stat"><span>Pressure</span><b>${t.pressure_mb||"–"} mb</b></div>`,

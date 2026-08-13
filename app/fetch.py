@@ -95,7 +95,7 @@ LEVEL_NAMES = {
 
 
 def http_get(url):
-    req = urllib.request.Request(url, headers={"User-Agent": "SkyWager/1.0 (personal weather nowcast)"})
+    req = urllib.request.Request(url, headers={"User-Agent": "Testing/1.0 (personal weather nowcast)"})
     with urllib.request.urlopen(req, timeout=30) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
@@ -300,7 +300,7 @@ def pages_url():
     if "/" in repo:
         owner = repo.split("/")[0]
         return f"https://{owner}.github.io/{repo.split('/')[1]}/"
-    return "https://<your-org>.github.io/skywager/"
+    return "https://<your-org>.github.io/testing/"
 
 
 def main():
@@ -369,7 +369,8 @@ def main():
         )
 
     if notify_lines and os.environ.get("DISABLE_EMAIL") != "1":
-        body_lines = [f"SkyWager alert — {now.strftime('%Y-%m-%d %H:%M')} UTC", ""]
+        hk_now = now + HK_OFFSET
+        body_lines = [f"Testing alert — {hk_now.strftime('%Y-%m-%d %H:%M')} HKT", ""]
         body_lines.extend(notify_lines)
         body_lines.append("")
         body_lines.append("AI nowcast probabilities (next 1-6h):")
@@ -382,7 +383,7 @@ def main():
         body_lines.append(f"Dashboard: {pages_url()}")
         body_lines.append("")
         body_lines.append("Experimental, unofficial prediction. Always check https://www.hko.gov.hk for official warnings.")
-        send_email("[SkyWager] Weather alert", "\n".join(body_lines))
+        send_email("[Testing] Weather alert", "\n".join(body_lines))
 
     rows = write_csv(rows, row)
     write_json(LATEST_JSON, {
