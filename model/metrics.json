@@ -1,13 +1,35 @@
 {
-  "n_total": 168,
-  "generated": "2026-08-13T21:49:05",
+  "n_total": 169,
+  "generated": "2026-08-13T22:44:45",
   "targets": {
     "rain_1h": {
-      "n_samples": 54,
-      "n_pos": 8,
+      "n_samples": 55,
+      "n_pos": 9,
       "n_val": 11,
-      "n_val_pos": 0,
-      "status": "skipped (a fold has a single class \u2014 need more positives)"
+      "n_val_pos": 1,
+      "lr": {
+        "pr_auc": 0.2,
+        "brier": 0.0867
+      },
+      "trees": {
+        "pr_auc": 1.0,
+        "brier": 0.0
+      },
+      "model": "trees",
+      "calibrated": false,
+      "pr_auc": 1.0,
+      "brier": 0.0,
+      "persistence": {
+        "pr_auc": 0.0909,
+        "brier": 0.0909
+      },
+      "climatology": {
+        "brier": 0.0909
+      },
+      "ships": true,
+      "blend_w": 1.0,
+      "blend_brier": 0.0,
+      "status": "shipped"
     },
     "amber_3h": {
       "n_samples": 153,
@@ -27,6 +49,6 @@
   },
   "train_range": [
     "2026-08-02T08:50:11+00:00",
-    "2026-08-13T21:48:42+00:00"
+    "2026-08-13T22:44:16+00:00"
   ]
 }
