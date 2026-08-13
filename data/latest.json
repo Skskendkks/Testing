@@ -1,17 +1,15 @@
 {
-  "ts": "2026-08-13T10:09:35+00:00",
-  "temp_mean": 30.9,
-  "hum_mean": 74.0,
+  "ts": "2026-08-13T11:49:36+00:00",
+  "temp_mean": 30.6,
+  "hum_mean": 75.0,
   "rain_total": 0,
   "rain_main": 0,
   "rain_1h": 0.0,
   "rain_3h": 0.0,
   "active_warnings": [
-    "Very Hot Weather Warning (REISSUE)"
+    "Very Hot Weather Warning (CANCEL)"
   ],
-  "special_tips": [
-    "Prolonged heat affected Hong Kong in recent days. As of today (13 August), the maximum temperature recorded at the Observatory was 33.0 degrees or above for 9 consecutive days, equalling the longest record of consecutive very hot days in August. \n\nAreas of thundery showers are expected to edge closer to the coastal areas gradually. Showers will increase over the territory and the high temperature weather will be alleviated. There will be occasional showers and squally thunderstorms tonight and tomorrow (14 August). Showers will be heavy at times at first. There will still be more showers in some areas with thunderstorms at first on Saturday (15 August), and sunny intervals during the day. The Observatory will issue rainstorm warning signals or Localised Heavy Rain Advisory when necessary. Members of the public should pay attention to the latest weather information issued by the Observatory and be aware of the changes in weather before going to work or school.\n\nLocally, it is expected to be very hot during the day early next week, but still a few showers."
-  ],
+  "special_tips": [],
   "predictions": {
     "rain_1h": 0.1,
     "amber_3h": 0.05,
@@ -21,7 +19,7 @@
     "rain120_25mm": 0.001,
     "rain120_35mm": 0.0
   },
-  "v3_grid_ts": "202608131818",
+  "v3_grid_ts": "202608132006",
   "official_levels": {},
   "tc": null,
   "tc_scanned": [],
