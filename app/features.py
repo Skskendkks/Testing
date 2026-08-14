@@ -76,9 +76,10 @@ def _feat(row, col):
     if v in (None, ""):
         return FEATURE_DEFAULTS.get(col, 0.0)
     try:
-        return float(v)
+        value = float(v)
     except (TypeError, ValueError):
         return FEATURE_DEFAULTS.get(col, 0.0)
+    return value if math.isfinite(value) else FEATURE_DEFAULTS.get(col, 0.0)
 
 
 def feature_vector(row):
@@ -93,8 +94,36 @@ def apply_cal(p, cal):
 
 
 def _lr_prob(entry, x):
-    z = entry["intercept"]
-    for xi, m, s, c in zip(x, entry["mean"], entry["std"], entry["coef"]):
+    """Return a logistic-regression probability from a portable model artifact.
+
+    Older artifacts rounded near-zero standard deviations to ``0.0``. A zero
+    standard deviation with a zero coefficient is a constant feature and can
+    safely be ignored; a non-zero coefficient would make the artifact invalid.
+    """
+    try:
+        intercept = float(entry["intercept"])
+        mean = entry["mean"]
+        std = entry["std"]
+        coef = entry["coef"]
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError("invalid LR artifact structure") from exc
+    if not (len(x) == len(mean) == len(std) == len(coef)):
+        raise ValueError("invalid LR artifact feature dimensions")
+    if not math.isfinite(intercept):
+        raise ValueError("invalid LR artifact intercept")
+
+    z = intercept
+    for xi, m, s, c in zip(x, mean, std, coef):
+        try:
+            xi, m, s, c = float(xi), float(m), float(s), float(c)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("non-numeric LR artifact value") from exc
+        if not all(math.isfinite(v) for v in (xi, m, s, c)):
+            raise ValueError("non-finite LR artifact value")
+        if abs(s) < 1e-12:
+            if abs(c) < 1e-12:
+                continue
+            raise ValueError("zero LR standard deviation with non-zero coefficient")
         z += ((xi - m) / s) * c
     return sigmoid(z)
 
@@ -139,7 +168,15 @@ def predict_ai(row):
             continue
         if len(entry["coef"]) != len(FEATURE_COLS):
             continue  # stale model trained on an older feature set
-        out[target] = apply_cal(_lr_prob(entry, x), entry.get("cal"))
+        try:
+            probability = apply_cal(_lr_prob(entry, x), entry.get("cal"))
+        except (KeyError, TypeError, ValueError, OverflowError) as exc:
+            print(f"[model] skipped invalid LR artifact for {target}: {exc}")
+            continue
+        if math.isfinite(probability) and 0.0 <= probability <= 1.0:
+            out[target] = probability
+        else:
+            print(f"[model] skipped non-finite LR prediction for {target}")
     return out
 
 

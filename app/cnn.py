@@ -249,6 +249,7 @@ def save_weights(weights, metrics, n_total):
     MODEL_DIR.mkdir(exist_ok=True)
     payload = {
         "meta": {
+            "schema_version": 4,
             "n_total": n_total,
             "generated": __import__("datetime").datetime.now().isoformat(timespec="seconds"),
             "in_ch": int(weights[0].shape[1]),
@@ -288,7 +289,11 @@ def predict_frames(leads, payload=None):
         payload = load_weights()
     if not payload:
         return None
-    in_ch = int(payload.get("meta", {}).get("in_ch", 3))
+    meta = payload.get("meta", {})
+    if meta.get("schema_version") != 4:
+        print("[cnn] skipped legacy artifact without schema_version=4")
+        return None
+    in_ch = int(meta.get("in_ch", 3))
     scale = payload.get("meta", {}).get("input_scale", payload.get("input_scale", INPUT_SCALE))
     if in_ch == 5:
         if len(leads) < 4:
@@ -308,7 +313,7 @@ def predict_frames(leads, payload=None):
     p = forward(x.astype(np.float32), weights_to_list(payload))[0]
     out = {}
     for k, t in enumerate(V3_TARGETS):
-        if payload.get(t, {}).get("beats_baseline", True) is False:
+        if payload.get(t, {}).get("beats_baseline") is not True:
             continue
         out[t] = round(float(p[k]), 3)
     return out or None
@@ -322,11 +327,12 @@ def main():
     d = np.load(npz_path)
     X, y = d["X"], d["y"]
     B = d["B"] if "B" in d else None
-    if X.shape[1] != IN_CH:
-        print(f"[cnn] note: dataset has {X.shape[1]} channels (v4 expects {IN_CH}) — "
-              "re-run app/backfill.py to rebuild with real-future labels + baseline")
-    if B is None:
-        print("[cnn] note: dataset has no baseline column — advection-baseline check skipped")
+    if X.shape[1] != IN_CH or B is None:
+        print(
+            f"[cnn] skipped: dataset schema is incompatible (channels={X.shape[1]}, "
+            f"baseline={'present' if B is not None else 'missing'}); rebuild with app/backfill.py"
+        )
+        return
     print(f"[cnn] dataset: {X.shape[0]} samples, {X.shape[1]} channels")
     weights, metrics = train(X, y, B=B)
     save_weights(weights, metrics, int(X.shape[0]))

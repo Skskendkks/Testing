@@ -32,6 +32,8 @@
   footer a { color:var(--accent); }
   .danger { color:var(--danger); }
   .meta { color:var(--dim); font-size:11px; margin-top:10px; }
+  .fresh { color:#7ee787; font-size:12px; }
+  .stale { color:var(--danger); font-size:12px; font-weight:700; }
 </style>
 </head>
 <body>
@@ -39,6 +41,7 @@
   <h1>Test<span>ing</span></h1>
   <span class="tag">HK warning nowcast · experimental AI + rules</span>
   <span class="warn">Unofficial — always check <a href="https://www.hko.gov.hk" style="color:var(--accent)">hko.gov.hk</a> for official warnings</span>
+  <span class="tag" id="freshness">data freshness: loading…</span>
 </header>
 <main>
   <div class="grid">
@@ -84,10 +87,21 @@ function fmtHKT(iso){
   const hk = new Date(new Date(iso).getTime() + 8*3600*1000);
   return hk.toISOString().slice(0,16).replace("T"," ");
 }
+function setFreshness(iso){
+  const el = document.getElementById("freshness");
+  const observedAt = new Date(iso).getTime();
+  const ageMinutes = Number.isFinite(observedAt) ? Math.max(0, Math.floor((Date.now()-observedAt)/60000)) : null;
+  if(ageMinutes===null){ el.textContent="data freshness: unavailable"; el.className="stale"; return; }
+  const ageText = ageMinutes<60 ? `${ageMinutes} min ago` : `${Math.floor(ageMinutes/60)}h ${ageMinutes%60}m ago`;
+  const stale = ageMinutes>120;
+  el.textContent = stale ? `STALE DATA: ${ageText}` : `data freshness: ${ageText}`;
+  el.className = stale ? "stale" : "fresh";
+}
 (async function(){
   const latest = await loadJson("data/latest.json");
   const history = await loadJson("data/history.json");
   document.title = `Testing — ${fmtHKT(latest.ts)} HKT`;
+  setFreshness(latest.ts);
   document.getElementById("temp").textContent = latest.temp_mean===""||latest.temp_mean==null?"–":latest.temp_mean+"°C";
   document.getElementById("hum").textContent = latest.hum_mean===""||latest.hum_mean==null?"–":latest.hum_mean+"%";
   document.getElementById("rain").textContent = latest.rain_total===""||latest.rain_total==null?"–":latest.rain_total+" mm";
