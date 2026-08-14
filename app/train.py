@@ -167,7 +167,12 @@ def main():
     rows = load_rows()
     n = len(rows)
     generated = datetime.now().isoformat(timespec="seconds")
-    meta = {"n_total": n, "generated": generated}
+    meta = {
+        "artifact_version": 2,
+        "feature_cols": list(FEATURE_COLS),
+        "n_total": n,
+        "generated": generated,
+    }
     weights_out = {"meta": dict(meta)}
     trees_out = {"meta": dict(meta)}
     blend_out = {"meta": dict(meta), "targets": {t: 0.0 for t in TARGETS}}
@@ -294,8 +299,12 @@ def main():
             weights_out[target] = {
                 "intercept": float(lr.intercept_[0]),
                 "coef": [float(c) for c in lr.coef_[0]],
-                "mean": [round(float(m), 4) for m in mean],
-                "std": [round(float(s), 4) for s in std],
+                # Preserve full precision: rounding a protected 1e-6 standard
+                # deviation to four decimal places previously created 0.0 and
+                # broke production inference.
+                "mean": [float(m) for m in mean],
+                "std": [float(s) for s in std],
+                "n_features": len(FEATURE_COLS),
                 "cal": cal,
                 "n_pos": int(sum(y)),
                 "n_neg": int(len(y) - sum(y)),

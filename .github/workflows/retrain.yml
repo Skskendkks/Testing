@@ -2,15 +2,15 @@ name: retrain
 
 on:
   schedule:
-    - cron: "0 3 * * *"
+    - cron: "17 3 * * *"
   workflow_dispatch:
-  workflow_run:
-    workflows: [poll]
-    types: [completed]
-    branches: [main]
 
 permissions:
   contents: write
+
+concurrency:
+  group: retrain
+  cancel-in-progress: false
 
 jobs:
   retrain:
@@ -30,11 +30,17 @@ jobs:
       - name: Install deps
         run: pip install --quiet scikit-learn numpy
 
-      - name: Train
+      - name: Run regression tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Train tabular models
         run: python app/train.py
 
-      - name: Train v3 CNN
+      - name: Train CNN when dataset schema is compatible
         run: python app/cnn.py
+
+      - name: Validate portable model artifacts
+        run: python app/check_artifacts.py
 
       - name: Commit model
         run: |

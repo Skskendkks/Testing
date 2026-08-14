@@ -2,7 +2,8 @@ name: poll
 
 on:
   schedule:
-    - cron: "0 * * * *"
+    # Avoid the top-of-hour Actions load spike; HKO nowcast data remains frequent.
+    - cron: "7 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -21,6 +22,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+
+      - name: Run regression tests
+        run: python -m unittest discover -s tests -v
 
       - name: Run poller
         run: |
