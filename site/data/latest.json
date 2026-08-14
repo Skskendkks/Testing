@@ -1,22 +1,25 @@
 {
-  "ts": "2026-08-14T16:00:29+00:00",
-  "temp_mean": 27.4,
-  "hum_mean": 90.0,
-  "rain_total": 18,
-  "rain_main": 7,
-  "rain_1h": 18.0,
-  "rain_3h": 18.0,
+  "ts": "2026-08-14T17:03:32+00:00",
+  "temp_mean": 27.1,
+  "hum_mean": 94.0,
+  "rain_total": 170,
+  "rain_main": 28,
+  "rain_1h": 0.0,
+  "rain_3h": 170.0,
   "active_warnings": [
-    "Thunderstorm Warning (UPDATE)"
+    "Thunderstorm Warning (EXTEND)"
   ],
-  "special_tips": [],
+  "special_tips": [
+    "Intense gusts reaching 70 kilometres per hour or above may affect Hong Kong. Members of public should seek safe shelter as soon as possible.",
+    "Areas of thundery showers develop persistently over the vicinity of the Pearl River Estuary. Showers are expected to be heavier over parts of the territory with squally thunderstorms in the next few hours. Members of the public please be aware of the change in weather."
+  ],
   "predictions": {
-    "rain_1h": 0.85,
-    "amber_3h": 0.33,
-    "red_3h": 0.02,
+    "rain_1h": 0.45,
+    "amber_3h": 0.409,
+    "red_3h": 0.47,
     "tc3_6h": 0.24
   },
-  "v3_grid_ts": "202608150018",
+  "v3_grid_ts": "202608150118",
   "official_levels": {},
   "tc": null,
   "tc_scanned": [],
