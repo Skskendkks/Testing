@@ -1,28 +1,26 @@
 {
-  "ts": "2026-08-14T20:38:47+00:00",
-  "temp_mean": 26.5,
-  "hum_mean": 91.0,
-  "rain_total": 184,
-  "rain_main": 29,
-  "rain_1h": 0.0,
-  "rain_3h": 124.0,
+  "ts": "2026-08-14T21:34:43+00:00",
+  "temp_mean": 26.6,
+  "hum_mean": 88.0,
+  "rain_total": 76,
+  "rain_main": 13,
+  "rain_1h": -108.0,
+  "rain_3h": 46.0,
   "active_warnings": [
-    "Rainstorm Warning Signal (ISSUE)",
+    "Rainstorm Warning Signal (CANCEL)",
     "Thunderstorm Warning (EXTEND)"
   ],
   "special_tips": [
     "Intense gusts reaching 70 kilometres per hour or above may affect Hong Kong. Members of public should seek safe shelter as soon as possible."
   ],
   "predictions": {
-    "rain_1h": 0.45,
-    "amber_3h": 0.421,
-    "red_3h": 0.72,
+    "rain_1h": 0.25,
+    "amber_3h": 0.356,
+    "red_3h": 0.22,
     "tc3_6h": 0.24
   },
-  "v3_grid_ts": "202608150454",
-  "official_levels": {
-    "w_RAIN_AMBER": "Amber Rainstorm"
-  },
+  "v3_grid_ts": "202608150542",
+  "official_levels": {},
   "tc": null,
   "tc_scanned": [],
   "blend_ai_weight": {
