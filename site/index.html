@@ -34,6 +34,10 @@
   .meta { color:var(--dim); font-size:11px; margin-top:10px; }
   .fresh { color:#7ee787; font-size:12px; }
   .stale { color:var(--danger); font-size:12px; font-weight:700; }
+  .mode { color:var(--dim); font-size:11px; margin-top:3px; }
+  .health-ok { color:#7ee787; }
+  .health-degraded { color:var(--warn); }
+  .health-failed, .health-unknown { color:var(--danger); font-weight:700; }
 </style>
 </head>
 <body>
@@ -53,6 +57,7 @@
     </div>
     <div class="card"><h2>Official warnings</h2><div id="warnings"><span class="tip">none active</span></div></div>
   </div>
+  <div class="card"><h2>Data health</h2><div id="health"><span class="tip">loading…</span></div></div>
   <div class="card"><h2>Prediction — next 1–6h</h2><div id="preds"></div>
     <div class="meta" id="meta"></div>
   </div>
@@ -73,8 +78,10 @@ const TARGET_LABELS = {
   rain120_35mm:"Extreme ≥35mm/30min ~2h (CNN)"
 };
 async function loadJson(p){ const r = await fetch(p); if(!r.ok) throw new Error(p); return r.json(); }
-function fmtPct(p){ return Math.round(p*100)+"%"; }
-function bar(p){ const w=Math.round(Math.min(1,p)*100); return `<div class="bar"><i style="width:${w}%"></i></div>`; }
+async function loadOptionalJson(p, fallback){ try { return await loadJson(p); } catch (_) { return fallback; } }
+function esc(v){ return String(v??"").replace(/[&<>'"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;","\"":"&quot;"}[c])); }
+function fmtPct(p){ return Math.round(Number(p||0)*100)+"%"; }
+function bar(p){ const w=Math.round(Math.max(0,Math.min(1,Number(p||0)))*100); return `<div class="bar"><i style="width:${w}%"></i></div>`; }
 function chart(h){
   const W=700, H=120, pad=6;
   const max = Math.max(1, ...h.map(d=>d.rain||0));
@@ -82,7 +89,20 @@ function chart(h){
   const area = h.length>1 ? `${pts} ${W-pad},${H-pad} ${pad},${H-pad}` : "";
   return `<polyline points="${pts}" fill="none" stroke="#4cc2ff" stroke-width="2"/><polygon points="${area}" fill="rgba(76,194,255,.15)"/>`;
 }
-function chip(name){ return `<span class="chip">${name}</span>`; }
+function chip(name){ return `<span class="chip">${esc(name)}</span>`; }
+function modelMode(detail){
+  if(!detail || detail.mode==="rules") return "Rules-only";
+  if(detail.mode==="cnn") return "CNN";
+  return `Rules + AI blend (${Math.round((detail.blend_weight||0)*100)}% AI)`;
+}
+function renderHealth(health){
+  const h = health||{};
+  const status = h.status||"unknown";
+  const label = status==="ok" ? "Healthy" : status==="degraded" ? "Degraded" : status==="failed" ? "Poll failed" : "Unknown";
+  const components = Object.entries(h.components||{}).map(([k,v])=>`${esc(k)}: ${esc(v)}`).join(" · ");
+  const lastSuccess = h.last_success_at ? `${fmtHKT(h.last_success_at)} HKT` : "none";
+  document.getElementById("health").innerHTML = `<div class="health-${esc(status)}">${esc(label)}</div><div class="tip">${esc(h.summary||"No health record yet")}</div><div class="meta">Last success: ${esc(lastSuccess)}<br>${components||"components unavailable"}</div>`;
+}
 function fmtHKT(iso){
   const hk = new Date(new Date(iso).getTime() + 8*3600*1000);
   return hk.toISOString().slice(0,16).replace("T"," ");
@@ -100,8 +120,10 @@ function setFreshness(iso){
 (async function(){
   const latest = await loadJson("data/latest.json");
   const history = await loadJson("data/history.json");
+  const health = await loadOptionalJson("data/health.json", {status:"unknown"});
   document.title = `Testing — ${fmtHKT(latest.ts)} HKT`;
   setFreshness(latest.ts);
+  renderHealth(health);
   document.getElementById("temp").textContent = latest.temp_mean===""||latest.temp_mean==null?"–":latest.temp_mean+"°C";
   document.getElementById("hum").textContent = latest.hum_mean===""||latest.hum_mean==null?"–":latest.hum_mean+"%";
   document.getElementById("rainSum").textContent = latest.rain_total===""||latest.rain_total==null?"–":latest.rain_total+" mm";
@@ -111,14 +133,13 @@ function setFreshness(iso){
   Object.values(latest.official_levels||{}).forEach(l=>warns.push(l));
   wd.innerHTML = warns.length ? warns.map(chip).join("") : `<span class="tip">none active</span>`;
   const pd = document.getElementById("preds");
-  pd.innerHTML = Object.entries(latest.predictions||{}).map(([k,p])=>
-    `<div class="prob"><div class="lbl"><span>${TARGET_LABELS[k]||k}</span><span class="pct">${fmtPct(p)}</span></div>${bar(p)}</div>`).join("");
-  const bw = latest.blend_ai_weight;
-  const bwText = (bw && typeof bw === "object")
-    ? Object.entries(bw).map(([k,w])=>`${k}:${w}`).join(" ")
-    : bw;
+  pd.innerHTML = Object.entries(latest.predictions||{}).map(([k,p])=>{
+    const detail=(latest.prediction_details||{})[k];
+    return `<div class="prob"><div class="lbl"><span>${esc(TARGET_LABELS[k]||k)}</span><span class="pct">${fmtPct(p)}</span></div>${bar(p)}<div class="mode">${esc(modelMode(detail))}</div></div>`;
+  }).join("");
+  const modeSummary = Object.entries(latest.prediction_details||{}).map(([k,d])=>`${TARGET_LABELS[k]||k}: ${modelMode(d)}`).join(" · ");
   document.getElementById("meta").textContent =
-    `AI blend weight: ${bwText} · rainfall source: ${latest.rain_source||"legacy"} · snapshot ${fmtHKT(latest.ts)} HKT`;
+    `${modeSummary||"Prediction source unavailable"} · rainfall source: ${latest.rain_source||"legacy"} · snapshot ${fmtHKT(latest.ts)} HKT`;
   const tips = document.getElementById("tips");
   tips.innerHTML = (latest.special_tips||[]).length ? latest.special_tips.map(chip).join("") : `<span class="tip">none</span>`;
   const tcEl = document.getElementById("tc");
@@ -136,7 +157,14 @@ function setFreshness(iso){
   }
   if(history && history.length>1) document.getElementById("chart").innerHTML = chart(history);
   else document.getElementById("chart").outerHTML = `<div class="tip">collecting history…</div>`;
-})().catch(e=>{ document.body.innerHTML = `<main><div class="card"><h2>Data not ready</h2><p class="tip">${e} — wait for the first poll run to complete (up to 20 min), or check Actions ran successfully.</p></div></main>`; });
+})().catch(e=>{
+  const main=document.querySelector("main");
+  main.textContent="";
+  const card=document.createElement("div"); card.className="card";
+  const title=document.createElement("h2"); title.textContent="Data not ready";
+  const text=document.createElement("p"); text.className="tip"; text.textContent=`${e} — wait for the first poll run to complete, or check Actions ran successfully.`;
+  card.append(title,text); main.append(card);
+});
 </script>
 </body>
 </html>
