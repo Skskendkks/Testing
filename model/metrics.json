@@ -1,54 +1,100 @@
 {
-  "n_total": 171,
-  "generated": "2026-08-14T02:06:58",
+  "n_total": 240606,
+  "generated": "2026-08-14T04:41:59",
   "targets": {
     "rain_1h": {
-      "n_samples": 56,
+      "n_samples": 239376,
       "n_pos": 10,
-      "n_val": 12,
-      "n_val_pos": 2,
-      "lr": {
-        "pr_auc": 0.1833,
-        "brier": 0.1626
-      },
-      "trees": {
-        "pr_auc": 1.0,
-        "brier": 0.0821
-      },
-      "model": "trees",
-      "calibrated": false,
-      "pr_auc": 1.0,
-      "brier": 0.0821,
-      "persistence": {
-        "pr_auc": 0.5833,
-        "brier": 0.0833
-      },
-      "climatology": {
-        "brier": 0.1391
-      },
-      "ships": true,
-      "blend_w": 0.4,
-      "blend_brier": 0.0485,
-      "status": "shipped"
+      "n_val": 47876,
+      "n_val_pos": 10,
+      "status": "skipped (a fold has a single class \u2014 need more positives)"
     },
     "amber_3h": {
-      "n_samples": 156,
-      "n_pos": 3,
-      "status": "skipped (3 positives < 4 or too few rows)"
+      "n_samples": 240510,
+      "n_pos": 3148,
+      "n_val": 48102,
+      "n_val_pos": 832,
+      "lr": {
+        "pr_auc": 0.2529,
+        "brier": 0.0922
+      },
+      "trees": {
+        "pr_auc": 0.2429,
+        "brier": 0.0673
+      },
+      "model": "lr",
+      "calibrated": true,
+      "pr_auc": 0.2529,
+      "brier": 0.0147,
+      "persistence": {
+        "pr_auc": 0.2316,
+        "brier": 0.0148
+      },
+      "climatology": {
+        "brier": 0.017
+      },
+      "ships": true,
+      "blend_w": 0.7,
+      "blend_brier": 0.0143,
+      "status": "shipped"
     },
     "red_3h": {
-      "n_samples": 156,
-      "n_pos": 0,
-      "status": "skipped (0 positives < 4 or too few rows)"
+      "n_samples": 240510,
+      "n_pos": 592,
+      "n_val": 48102,
+      "n_val_pos": 172,
+      "lr": {
+        "pr_auc": 0.1382,
+        "brier": 0.0844
+      },
+      "trees": {
+        "pr_auc": 0.0844,
+        "brier": 0.02
+      },
+      "model": "lr",
+      "calibrated": true,
+      "pr_auc": 0.1382,
+      "brier": 0.0034,
+      "persistence": {
+        "pr_auc": 0.1658,
+        "brier": 0.0033
+      },
+      "climatology": {
+        "brier": 0.0036
+      },
+      "ships": false,
+      "status": "rules-only (did not beat persistence baseline)"
     },
     "tc3_6h": {
-      "n_samples": 165,
-      "n_pos": 0,
-      "status": "skipped (0 positives < 4 or too few rows)"
+      "n_samples": 240571,
+      "n_pos": 2806,
+      "n_val": 48115,
+      "n_val_pos": 788,
+      "lr": {
+        "pr_auc": 0.0542,
+        "brier": 0.2192
+      },
+      "trees": {
+        "pr_auc": 0.0584,
+        "brier": 0.1245
+      },
+      "model": "trees",
+      "calibrated": true,
+      "pr_auc": 0.0584,
+      "brier": 0.0158,
+      "persistence": {
+        "pr_auc": 0.6863,
+        "brier": 0.0053
+      },
+      "climatology": {
+        "brier": 0.0161
+      },
+      "ships": false,
+      "status": "rules-only (did not beat persistence baseline)"
     }
   },
   "train_range": [
-    "2026-08-02T08:50:11+00:00",
+    "1998-01-01T00:00:00+00:00",
     "2026-08-14T02:06:34+00:00"
   ]
 }
