@@ -34,6 +34,7 @@ SITE_DATA_DIR = ROOT / "site" / "data"
 SNAPSHOT_CSV = DATA_DIR / "snapshots.csv"
 LATEST_JSON = DATA_DIR / "latest.json"
 HISTORY_JSON = DATA_DIR / "history.json"
+CNN_EVALUATION_JSON = ROOT / "model" / "cnn_evaluation.json"
 LAST_WARN = STATE_DIR / "last_warnings.json"
 
 WEATHER_URL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=en"
@@ -343,6 +344,19 @@ def write_json(path, obj):
         json.dump(obj, f, indent=2, ensure_ascii=False)
 
 
+def load_cnn_evaluation():
+    """Expose benchmark status without turning it into a live forecast."""
+    if not CNN_EVALUATION_JSON.exists():
+        return {
+            "status": "not_run",
+            "overall_conclusion": "CNN benchmark has not been run on a compatible dataset.",
+        }
+    try:
+        return json.loads(CNN_EVALUATION_JSON.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        return {"status": "unreadable", "overall_conclusion": f"CNN evaluation report is unavailable: {type(exc).__name__}"}
+
+
 def pages_url():
     repo = os.environ.get("GITHUB_REPOSITORY", "")
     if "/" in repo:
@@ -369,26 +383,7 @@ def main():
     f3_feats = f3_features(snap["leads"]) if snap else None
     row, temps, hums, rains = build_row(weather, warnsum, messages, levels, rows, tc_feats, f3_feats)
 
-    rules_p = rule_probs(row)
-    ai_p = predict_ai(row)
-    w_map = blend_weights()
-    probs = blend_probs(rules_p, ai_p, w_map)
-
-    v3 = None
-    v3_grid_ts = None
-    if cnnmod is not None and snap:
-        try:
-            v3_grid_ts = snap["ts"]
-            v3 = cnnmod.predict_frames(snap["leads"])
-            if v3:
-                probs.update(v3)
-        except Exception as e:
-            print(f"[poll] v3 cnn skipped: {e}")
-
-    details = prediction_details(rules_p, ai_p, w_map, probs)
-    if v3:
-        for target, probability in v3.items():
-            details[target] = {"final": probability, "rule": None, "ai": probability, "blend_weight": 1.0, "mode": "cnn"}
+    cnn_evaluation = load_cnn_evaluation()
 
     prev_state = None
     if LAST_WARN.exists():
@@ -404,12 +399,6 @@ def main():
         notify_lines.append("Official HKO warning state changed. Details in email.")
 
     now = datetime.now(timezone.utc)
-    notified = load_notified()
-    alert_keys = ai_alert_keys(probs, notified, now)
-    for k in alert_keys:
-        mode = details.get(k, {}).get("mode", "rules")
-        mode_label = "rules-only" if mode == "rules" else ("rules + AI" if mode == "blended" else mode.upper())
-        notify_lines.append(f"* {TARGET_LABELS[k]}: probability {probs[k]:.0%} ({mode_label} lead alert)")
 
     nearest_tc = tc_state.get("nearest")
     tc_line = None
@@ -427,21 +416,16 @@ def main():
         body_lines = [f"Testing alert — {hk_now.strftime('%Y-%m-%d %H:%M')} HKT", ""]
         body_lines.extend(notify_lines)
         body_lines.append("")
-        body_lines.append("Experimental nowcast probabilities (next 1-6h):")
-        for t in TARGETS:
-            mode = details.get(t, {}).get("mode", "rules")
-            mode_label = "rules-only" if mode == "rules" else ("rules + AI" if mode == "blended" else mode.upper())
-            body_lines.append(f"  {TARGET_LABELS[t]}: {probs[t]:.0%} [{mode_label}]")
+        body_lines.append("This project is a CNN skill benchmark and does not issue weather predictions.")
+        body_lines.append(f"CNN benchmark status: {cnn_evaluation.get('status', 'not_run')}")
         if tc_line:
             body_lines.append("")
             body_lines.append(tc_line)
         body_lines.append("")
         body_lines.append(f"Dashboard: {pages_url()}")
         body_lines.append("")
-        body_lines.append("Experimental, unofficial prediction. Always check https://www.hko.gov.hk for official warnings.")
-        if send_email("[Testing] Weather alert", "\n".join(body_lines)):
-            for k in alert_keys:
-                notified[k] = now.isoformat(timespec="seconds")
+        body_lines.append("For weather decisions, always check official HKO warnings.")
+        send_email("[Testing] Official HKO warning update", "\n".join(body_lines))
 
     rows = write_csv(rows, row)
     write_json(LATEST_JSON, {
@@ -456,26 +440,26 @@ def main():
         "rain_3h": row["rain_3h"],
         "active_warnings": active_warning_names(warnsum),
         "special_tips": weather.get("specialWxTips", []),
-        "predictions": probs,
-        "prediction_details": details,
-        "v3_grid_ts": v3_grid_ts,
+        "cnn_evaluation": cnn_evaluation,
+        "f3_snapshot_time": snap.get("ts") if snap else None,
         "official_levels": {k: v for k, v in LEVEL_NAMES.items() if levels.get(k)},
         "tc": tc_state.get("nearest"),
         "tc_scanned": tc_state.get("scanned", []),
-        "blend_ai_weight": {t: round(w_map.get(t, 0.0), 2) for t in TARGETS},
     })
     write_json(HISTORY_JSON, build_history(rows))
     write_json(SITE_DATA_DIR / "latest.json", json.loads(LATEST_JSON.read_text(encoding="utf-8")))
     write_json(SITE_DATA_DIR / "history.json", json.loads(HISTORY_JSON.read_text(encoding="utf-8")))
-    model_modes = {target: detail["mode"] for target, detail in details.items()}
-    publish_health(success_status(row, f3_available=snap is not None, model_modes=model_modes))
+    publish_health(success_status(
+        row,
+        f3_available=snap is not None,
+        model_status=f"cnn-benchmark:{cnn_evaluation.get('status', 'not_run')}",
+    ))
 
     STATE_DIR.mkdir(exist_ok=True)
     write_json(LAST_WARN, {"warnsum": warnsum, "levels": levels})
-    save_notified(notified)
 
     print(f"[poll] {row['ts']} temp={row['temp_mean']} hum={row['hum_mean']} rain={row['rain_total']}mm")
-    print(f"[poll] probs: " + ", ".join(f"{t}={p}" for t, p in probs.items()))
+    print(f"[poll] cnn benchmark status={cnn_evaluation.get('status', 'not_run')}")
     if tc_line:
         print(f"[poll] {tc_line}")
 

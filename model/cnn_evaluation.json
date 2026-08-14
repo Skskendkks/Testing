@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "generated": "2026-08-14T11:19:16+00:00",
+  "status": "blocked",
+  "task": {
+    "name": "F3-grid rainfall nowcast skill benchmark",
+    "question": "Does the CNN add skill beyond HKO F3's own two-hour advection nowcast?",
+    "input": "Four F3 half-hourly forecast grids plus one inter-frame change grid over Hong Kong.",
+    "target": "A later F3 lead-0 grid approximately 90–150 minutes after the input snapshot.",
+    "evaluation": "Chronological last-20% holdout; PR-AUC and Brier score against the F3 advection baseline.",
+    "limitation": "The target is a later F3 product, not independent rain-gauge ground truth. Results measure added skill over this proxy baseline only."
+  },
+  "dataset": {
+    "samples": 650,
+    "input_shape": [
+      3,
+      32,
+      32
+    ],
+    "targets": [
+      "rain120_15mm",
+      "rain120_25mm",
+      "rain120_35mm"
+    ],
+    "positive_counts": [
+      226,
+      142,
+      101
+    ],
+    "time_start": "2026-07-25T16:06:00+00:00",
+    "time_end": "2026-08-01T15:54:00+00:00",
+    "has_advection_baseline": false
+  },
+  "blocking_reasons": [
+    "dataset is missing required arrays: B",
+    "expected X shape (N, 5, 32, 32), got (650, 3, 32, 32)"
+  ],
+  "next_step": "Rebuild data/grid_dataset.npz with app/backfill.py using the 5-channel schema and B baseline before running this benchmark."
+}

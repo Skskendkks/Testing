@@ -1,102 +1,94 @@
-# Testing
+# CNN Rain Nowcast Benchmark
 
 <https://skskendkks.github.io/testing/site/index.html>
 
-Unofficial Hong Kong weather-warning nowcast. Polls HKO Open Data hourly, predicts
-warning probability (rain, Amber/Red Rainstorm, Typhoon Signal 3+) using a hybrid of
-hand-written rules and a nightly-retrained logistic-regression model, emails you on
-official warning changes and AI lead alerts, and renders a static dashboard.
+This repository is a **reproducible CNN skill-evaluation project**, not a weather-warning or public forecasting product. It asks one bounded question:
 
-V2 adds JTWC tropical-cyclone best-track/forecast ingestion (distance, bearing, wind,
-pressure, 24h forecast distance from HK) as model features and dashboard/email content.
+> **Do CNN features from HKO F3 gridded rainfall nowcasts add predictive skill beyond HKO F3's own two-hour advection nowcast?**
 
-V3 adds a CNN rain nowcast on HKO's gridded rainfall-nowcast data (121×121 grid at
-~2km, 4 lead times, updated every 12 min): a small pure-NumPy conv net trained on
-archived grids from the data.gov.hk historical archive predicts heavy-rain
-probability ~2h ahead. Radar imagery is NOT exposed via HKO Open Data (no archive),
-so the gridded nowcast is used instead of radar images.
+The dashboard reports a clear **completed**, **blocked**, or **no added skill** outcome. It never presents a CNN probability as an operational weather forecast and it does not send model-driven lead alerts. For weather decisions, use official [Hong Kong Observatory warnings](https://www.hko.gov.hk/).
+
+## What is evaluated
+
+| Item | Definition |
+|---|---|
+| **Input** | Four HKO F3 half-hourly gridded rainfall-nowcast frames over Hong Kong, downsampled to 32 × 32, plus one inter-frame change channel. |
+| **Target** | Maximum rainfall in the first lead frame of a later F3 snapshot approximately 90–150 minutes after the input. |
+| **Thresholds** | At least 15 mm, 25 mm, or 35 mm in a 30-minute grid cell around two hours ahead. |
+| **Evaluation split** | Timestamp-ordered final 20% holdout. Training never sees the holdout period. |
+| **Baseline** | Maximum rain in the input snapshot's own F3 two-hour advection lead. |
+| **Success criterion** | The CNN must improve **both** PR-AUC and Brier score versus the baseline for a target. |
+
+The target is a later **F3 product**, rather than independent rain-gauge ground truth. Therefore the benchmark measures incremental skill relative to the F3 proxy baseline only; it does not establish general weather-forecasting skill.
 
 ## Architecture
 
+```text
+HKO F3 archive ── app/backfill.py ── data/grid_dataset.npz
+                                             │
+                       time-ordered holdout ─┤
+                                             ▼
+                            app/cnn_benchmark.py
+                              │         │
+                              │         └── F3 advection baseline comparison
+                              ▼
+          model/cnn_evaluation.json + site/data/cnn_evaluation.json
+                              │
+                              ▼
+                    GitHub Pages experiment report
 ```
-GitHub Actions (hourly)                     GitHub Actions (03:00 UTC daily)
-app/fetch.py ──► data/snapshots.csv ──► app/train.py (scikit-learn)
-   │  rules + AI blend                          │  app/cnn.py (NumPy ConvNet)
-   │  └─► email alerts (Gmail SMTP)             ▼
-   │  └─► data/latest.json, history.json   model/weights.json + cnn_weights.json
-   ├─► app/grid.py ──► HKO F3 gridded nowcast (v3 CNN input, live)
-   ├─► app/jtwc.py ──► data/tc_state.json (JTWC/NOAA ATCF track data)
-   └─► site/data/* ──► GitHub Pages dashboard
+
+| Component | Responsibility |
+|---|---|
+| `app/backfill.py` | Builds the version-4 CNN dataset from historical F3 archive snapshots. It pairs inputs to a later F3 proxy label and saves the advection baseline `B`. |
+| `app/cnn.py` | Pure-NumPy CNN implementation and PR-AUC/Brier metric calculation. A CNN target is eligible only if it beats the baseline. |
+| `app/cnn_benchmark.py` | Validates the dataset contract, runs the chronological benchmark, and publishes a machine-readable report. An incompatible dataset creates an explicit `blocked` report rather than a model. |
+| `site/index.html` | Static experiment-report interface, showing the task, dataset, baseline comparison, conclusion, and data-pipeline health. |
+| `.github/workflows/retrain.yml` | Manual or weekly `cnn-evaluation` run that updates only the benchmark report and an eligible CNN artifact. |
+| `app/fetch.py` | Collects source-health information and official-warning changes only. It no longer publishes model probabilities or lead alerts. |
+
+## Run an experiment
+
+First collect a compatible data set. The existing legacy 3-channel data set is intentionally rejected because it lacks the current five-channel schema and the baseline array needed for a fair comparison.
+
+```bash
+# Example: collect event-oriented and quiet days in the desired date range.
+python app/backfill.py --range 2025-05-01 2025-10-31 --events
+
+# Validate the contract, train on the chronological training period,
+# and evaluate on the untouched final 20%.
+python app/cnn_benchmark.py
 ```
 
-- `app/fetch.py` — stdlib-only poller: fetches `rhrread` + `warnsum`, appends a snapshot,
-  runs rules + AI (sigmoid over JSON weights — no ML lib needed), sends emails on
-  triggers, writes dashboard JSON.
-- `app/grid.py` — v3: fetches HKO's gridded rainfall nowcast (`hko_data/F3/...`), takes
-  the HK-region window and downsamples each lead frame to 32×32; stdlib only.
-- `app/cnn.py` — v3: small pure-NumPy ConvNet (2 conv layers → dense → 3 sigmoid heads)
-  trained from archived grid data; predicts max rainfall ≥15/25/35 mm in the 30-min
-  window ~2h ahead; inference is NumPy-only, weights exported to `model/cnn_weights.json`.
-- `app/backfill.py` — one-off: pulls historical daily ZIPs of the gridded nowcast from
-  the data.gov.hk historical archive (`app.data.gov.hk/v1/historical-archive/get-file`)
-  and builds `data/grid_dataset.npz` for CNN training.
-- `app/jtwc.py` — V2: scans NOAA's ATCF mirror for active Western-Pacific cyclones,
-  parses best-track + official (OFCL) forecast lines, computes distance/bearing from
-  Hong Kong and the 24h forecast distance; persists `data/tc_state.json`.
-- `app/rules.py` — interpretable nowcast rules (rainfall trend, humidity, active
-  warnings, cyclone distance/wind/approach).
-- `app/train.py` — nightly: trains one balanced logistic regression per target on
-  accumulated data with lookahead labels; exports coefficients + feature scaling to
-  `model/weights.json`; skips quietly until ≥48 rows / ≥2 positive samples per target.
-- `site/index.html` — static dashboard (GitHub Pages).
+The benchmark writes these artifacts:
 
-## Notification triggers
+| File | Meaning |
+|---|---|
+| `model/cnn_evaluation.json` | Full machine-readable result: task definition, dataset summary, status, blocking reasons or per-target metrics. |
+| `site/data/cnn_evaluation.json` | Copy rendered by the static benchmark dashboard. |
+| `model/cnn_weights.json` | CNN weights from a compatible benchmark run. They are not used to issue live weather forecasts. |
 
-1. Official HKO warning state changes (issue / extend / escalate / downgrade / cancel) — always emailed.
-2. Lead alerts: hybrid (rules + AI) probability ≥60% for Amber/Red Rainstorm or TC Signal 3+
-   within the horizon — emailed, then silent for 6h per signal type (cooldown).
+A benchmark can produce three useful outcomes.
 
-## Setup
+| Status | Interpretation |
+|---|---|
+| `blocked` | The dataset cannot support the experiment yet, such as missing baseline values, old channels, insufficient samples, or too few holdout positives. Rebuild or extend the dataset. |
+| `completed` with **added skill** | At least one threshold improves both PR-AUC and Brier score over the F3 baseline on the chronological holdout. This is evidence for that precise task only. |
+| `completed` with **no added skill** | The CNN did not improve on the baseline. This is a valid result and the correct conclusion is that the CNN has not demonstrated value for this task. |
 
-1. Create a **private** repo named `testing`, push this folder to it.
-2. Create a **Gmail app password** (Google Account → Security → 2-Step Verification →
-   App passwords) — needed because GitHub Actions can't use your normal Gmail login.
-3. Repo → Settings → Secrets and variables → Actions → add:
-   - `SMTP_USER` — your Gmail address
-   - `SMTP_APP_PASSWORD` — the 16-char app password
-   - `NOTIFY_TO` — the address that receives alerts (can be the same Gmail)
-4. Repo → Settings → Pages → **Build and deployment** → Source: **Deploy from a branch** →
-   Branch: `main`, folder: `/site`. GitHub builds the dashboard from the pushed `site/`
-   folder automatically (no workflow needed); the URL will be
-   `https://<you>.github.io/testing/`. Private-repo Pages needs Pro — included in the
-   student pack. (The old `pages.yml` workflow was removed — workflow-based Pages fails
-   with "Resource not accessible by integration" because the Actions token cannot
-   create a Pages site on a private repo.)
-5. Actions will start polling on the schedule (hourly) and retraining nightly.
-   The AI model activates once ~2 days of snapshots (~48 rows) accumulate.
-   To test immediately, open Actions → `poll` → Run workflow (workflow_dispatch).
-   Set the `DISABLE_EMAIL` environment variable to 1 on a run if you want to test
-   without sending mail.
-6. V3 CNN: a 7-day training set is committed in `data/grid_dataset.npz`. To refresh it
-   with more history, run `python app/backfill.py <days>` locally (downloads the daily
-   grid ZIPs from the data.gov.hk historical archive) and commit the new dataset; the
-   nightly retrain will then train `model/cnn_weights.json`.
+## Automation
 
-## Historical data — what's available
+The `cnn-evaluation` workflow runs weekly and can be triggered manually from GitHub Actions. It runs the regression suite, executes the benchmark, and commits only `cnn_evaluation.json`, `cnn_weights.json` when applicable, and the dashboard report. The `poll` workflow retains source-health and official-warning tracking but does not run model inference or send model alerts.
 
-- **Hourly `rhrread` / `warnsum` snapshots: no official history.** These are real-time
-  only; the model's tabular labels still accumulate from day one.
-- **Daily climate series: yes, since 1884+.** `data.gov.hk` hosts per-station CSVs
-  (rainfall, temperature, humidity, pressure, wind, sunshine, …) e.g.
-  `data.weather.gov.hk/weatherAPI/cis/csvfile/HKO/ALL/daily_HKO_RF_ALL.csv`.
-- **Gridded rainfall nowcast (v3 CNN): yes, full history.** The data.gov.hk historical
-  archive (`app.data.gov.hk/v1/historical-archive/get-file?url=…&time=YYYYMMDD`) serves
-  daily ZIPs with a timestamped snapshot every ~15 min (~24 MB/day).
-- **Radar imagery: no.** Not exposed via HKO Open Data and no public archive, so the
-  v3 CNN is trained on the gridded nowcast fields instead.
+## Data notes and limitations
 
-## Future
+The F3 archive is accessed through the data.gov.hk historical-archive endpoint for HKO's gridded rainfall nowcast. The data represent a nowcast product, not radar imagery or ground truth. Archived coverage, missing snapshots, spatial downsampling, and label correlation with the F3 baseline can all affect results. The dashboard and report make these constraints visible so that the project remains an experiment rather than a forecasting claim.
 
-- Pressure-drop features from daily climate CSVs (e.g. `daily_HKO_MSLP_ALL.csv`) to
-  enrich the tabular model.
-- Public-repo flip when the student discount expires (unlimited Actions minutes)
+## Development checks
+
+```bash
+python -m unittest discover -s tests -v
+python app/cnn_benchmark.py --quiet
+```
+
+The test suite covers the CNN dataset contract, benchmark conclusions, model-artifact safety, rainfall schema, and dashboard health-state data.

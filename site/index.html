@@ -2,169 +2,97 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Testing — HK warning nowcast</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CNN Rain Nowcast Benchmark</title>
 <style>
-  :root { --bg:#0f1420; --card:#1a2130; --line:#2a3450; --txt:#e8ecf4; --dim:#9aa7bd; --accent:#4cc2ff; --warn:#ffb020; --danger:#ff5c5c; }
+  :root { --bg:#0d1117; --panel:#161f2f; --line:#28364c; --txt:#e6edf3; --dim:#9baec8; --blue:#4cc2ff; --good:#7ee787; --warn:#f2cc60; --bad:#ff7b72; }
   * { box-sizing:border-box; }
-  body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; background:var(--bg); color:var(--txt); }
-  header { padding:18px 22px; border-bottom:1px solid var(--line); display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
-  h1 { font-size:20px; margin:0; letter-spacing:.5px; }
-  h1 span { color:var(--accent); }
-  .tag { color:var(--dim); font-size:12px; }
-  .warn { color:var(--warn); font-size:12px; }
-  main { max-width:960px; margin:0 auto; padding:20px; display:grid; gap:16px; }
-  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; }
-  .card h2 { margin:0 0 12px; font-size:13px; text-transform:uppercase; letter-spacing:1px; color:var(--dim); }
-  .stat { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed var(--line); font-size:14px; }
-  .stat:last-child { border-bottom:none; }
-  .stat b { font-size:16px; }
-  .bar { height:10px; background:#0d1320; border-radius:6px; overflow:hidden; margin-top:4px; }
-  .bar i { display:block; height:100%; background:linear-gradient(90deg,var(--accent),var(--warn)); border-radius:6px; }
-  .prob { margin-bottom:14px; }
-  .prob .lbl { display:flex; justify-content:space-between; font-size:14px; }
-  .prob .pct { color:var(--accent); font-weight:700; }
-  .chip { display:inline-block; background:#2a3450; border-radius:20px; padding:4px 10px; font-size:12px; margin:3px 4px 0 0; }
-  .tip { color:var(--dim); font-size:12.5px; line-height:1.5; margin:6px 0 0; }
-  svg { width:100%; height:120px; }
-  footer { max-width:960px; margin:0 auto; padding:0 20px 30px; color:var(--dim); font-size:12px; line-height:1.6; }
-  footer a { color:var(--accent); }
-  .danger { color:var(--danger); }
-  .meta { color:var(--dim); font-size:11px; margin-top:10px; }
-  .fresh { color:#7ee787; font-size:12px; }
-  .stale { color:var(--danger); font-size:12px; font-weight:700; }
-  .mode { color:var(--dim); font-size:11px; margin-top:3px; }
-  .health-ok { color:#7ee787; }
-  .health-degraded { color:var(--warn); }
-  .health-failed, .health-unknown { color:var(--danger); font-weight:700; }
+  body { margin:0; background:var(--bg); color:var(--txt); font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+  header { border-bottom:1px solid var(--line); padding:22px max(20px,calc((100% - 980px)/2)); }
+  h1 { margin:0 0 5px; font-size:24px; letter-spacing:.2px; }
+  h2 { font-size:13px; letter-spacing:.09em; text-transform:uppercase; color:var(--dim); margin:0 0 13px; }
+  p { line-height:1.55; }
+  main { max-width:980px; margin:0 auto; padding:20px; }
+  .subtitle,.muted { color:var(--dim); font-size:13px; }
+  .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:14px; }
+  .status { font-weight:750; font-size:18px; }
+  .status-completed { color:var(--good); }
+  .status-blocked,.status-unreadable { color:var(--warn); }
+  .status-not_run,.status-unknown { color:var(--bad); }
+  .badge { display:inline-block; border-radius:999px; padding:3px 9px; background:#25334b; color:var(--txt); font-size:12px; margin:3px 5px 3px 0; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th,td { text-align:left; padding:9px 6px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--dim); font-weight:600; }
+  .yes { color:var(--good); font-weight:700; }
+  .no { color:var(--warn); font-weight:700; }
+  .reasons { margin:7px 0 0; padding-left:20px; color:var(--warn); }
+  code { background:#202b3d; padding:2px 5px; border-radius:4px; color:#b9ddff; }
+  footer { max-width:980px; margin:0 auto; padding:6px 20px 30px; color:var(--dim); font-size:12px; line-height:1.6; }
+  footer a { color:var(--blue); }
+  @media(max-width:680px) { .grid { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
 <header>
-  <h1>Test<span>ing</span></h1>
-  <span class="tag">HK warning nowcast · experimental AI + rules</span>
-  <span class="warn">Unofficial — always check <a href="https://www.hko.gov.hk" style="color:var(--accent)">hko.gov.hk</a> for official warnings</span>
-  <span class="tag" id="freshness">data freshness: loading…</span>
+  <h1>CNN Rain Nowcast Benchmark</h1>
+  <div class="subtitle">A reproducible test of whether a CNN adds skill beyond the F3 advection baseline. This site does <strong>not</strong> issue weather forecasts or safety alerts.</div>
 </header>
 <main>
+  <div class="card" id="status"><span class="muted">Loading experiment report…</span></div>
   <div class="grid">
-    <div class="card"><h2>Current conditions</h2>
-      <div class="stat"><span>Temperature</span><b id="temp">–</b></div>
-      <div class="stat"><span>Humidity</span><b id="hum">–</b></div>
-      <div class="stat"><span>District-maxima sum (past 1h)</span><b id="rainSum">–</b></div>
-      <div class="stat"><span>Peak district rainfall (past 1h)</span><b id="rainPeak">–</b></div>
-    </div>
-    <div class="card"><h2>Official warnings</h2><div id="warnings"><span class="tip">none active</span></div></div>
+    <div class="card"><h2>Research question</h2><div id="task">Loading…</div></div>
+    <div class="card"><h2>Data pipeline health</h2><div id="health">Loading…</div></div>
   </div>
-  <div class="card"><h2>Data health</h2><div id="health"><span class="tip">loading…</span></div></div>
-  <div class="card"><h2>Prediction — next 1–6h</h2><div id="preds"></div>
-    <div class="meta" id="meta"></div>
+  <div class="card"><h2>Dataset contract</h2><div id="dataset">Loading…</div></div>
+  <div class="card"><h2>Holdout results vs F3 baseline</h2><div id="results">No completed benchmark yet.</div></div>
+  <div class="card"><h2>How to use this project</h2>
+    <p>First rebuild a compatible F3 dataset with <code>python app/backfill.py --range START END --events</code>. The dataset must contain five CNN input channels, timestamp-sorted samples, later F3 proxy labels, and the F3 advection baseline. Then run <code>python app/cnn_benchmark.py</code> or trigger the <strong>cnn-evaluation</strong> workflow.</p>
+    <p>The report only supports a claim of added skill when the chronological holdout has sufficient positives and the CNN improves both PR-AUC and Brier score against the baseline. A blocked or no-skill result is a useful result: it means the project does not yet have evidence that the CNN helps.</p>
   </div>
-  <div class="card"><h2>Special wx tips (HKO)</h2><div id="tips"><span class="tip">none</span></div></div>
-  <div class="card"><h2>Tropical cyclones (JTWC)</h2><div id="tc"><span class="tip">none near Hong Kong</span></div></div>
-  <div class="card"><h2>Last 7 days · peak district rainfall, 1h (mm)</h2><svg id="chart" viewBox="0 0 700 120" preserveAspectRatio="none"></svg></div>
 </main>
 <footer>
-  Data: HKO Open Data API (<a href="https://www.hko.gov.hk/en/abouthko/opendata_intro.htm">hko.gov.hk</a>) · Cyclone tracks: NOAA ATCF (JTWC). Testing predictions are experimental and not official forecasts. Do not use for safety-critical decisions — refer to official HKO warnings for work/school/evacuation decisions.
-  <br><a href="https://github.com/Skskendkks/testing">View source on GitHub</a>
+  Inputs and proxy labels: HKO F3 Gridded Rainfall Nowcast. The target is a later F3 grid, not independent gauge ground truth. For official forecasts and warnings, use <a href="https://www.hko.gov.hk/">Hong Kong Observatory</a>. <a href="https://github.com/Skskendkks/testing">View source on GitHub</a>.
 </footer>
 <script>
-const TARGET_LABELS = {
-  rain_1h:"Rain next 1h", amber_3h:"Amber Rainstorm \u22643h",
-  red_3h:"Red Rainstorm \u22643h", tc3_6h:"TC Signal 3+ \u22646h",
-  rain120_15mm:"Heavy rain ≥15mm/30min ~2h (CNN)",
-  rain120_25mm:"Very heavy ≥25mm/30min ~2h (CNN)",
-  rain120_35mm:"Extreme ≥35mm/30min ~2h (CNN)"
-};
-async function loadJson(p){ const r = await fetch(p); if(!r.ok) throw new Error(p); return r.json(); }
-async function loadOptionalJson(p, fallback){ try { return await loadJson(p); } catch (_) { return fallback; } }
-function esc(v){ return String(v??"").replace(/[&<>'"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;","\"":"&quot;"}[c])); }
-function fmtPct(p){ return Math.round(Number(p||0)*100)+"%"; }
-function bar(p){ const w=Math.round(Math.max(0,Math.min(1,Number(p||0)))*100); return `<div class="bar"><i style="width:${w}%"></i></div>`; }
-function chart(h){
-  const W=700, H=120, pad=6;
-  const max = Math.max(1, ...h.map(d=>d.rain||0));
-  const pts = h.map((d,i)=>`${pad+(W-2*pad)*i/(h.length-1)},${H-pad-(H-2*pad)*(d.rain||0)/max}`).join(" ");
-  const area = h.length>1 ? `${pts} ${W-pad},${H-pad} ${pad},${H-pad}` : "";
-  return `<polyline points="${pts}" fill="none" stroke="#4cc2ff" stroke-width="2"/><polygon points="${area}" fill="rgba(76,194,255,.15)"/>`;
+const labels={rain120_15mm:"≥15 mm / 30 min around 2h",rain120_25mm:"≥25 mm / 30 min around 2h",rain120_35mm:"≥35 mm / 30 min around 2h"};
+const esc=v=>String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;","\"":"&quot;"}[c]));
+const score=v=>v===undefined||v===null?"–":Number(v).toFixed(4);
+async function json(path,fallback){try{const r=await fetch(path);if(!r.ok)throw new Error();return await r.json()}catch(_){return fallback}}
+function healthView(h){
+  const status=h.status||"unknown";
+  const parts=Object.entries(h.components||{}).map(([k,v])=>`<span class="badge">${esc(k)}: ${esc(v)}</span>`).join("");
+  return `<div class="status status-${esc(status)}">${esc(status)}</div><p class="muted">${esc(h.summary||"No poll health record")}</p><div>${parts||"–"}</div>`;
 }
-function chip(name){ return `<span class="chip">${esc(name)}</span>`; }
-function modelMode(detail){
-  if(!detail || detail.mode==="rules") return "Rules-only";
-  if(detail.mode==="cnn") return "CNN";
-  return `Rules + AI blend (${Math.round((detail.blend_weight||0)*100)}% AI)`;
+function taskView(task){
+  if(!task)return "No task description available.";
+  return `<p><strong>Question:</strong> ${esc(task.question)}</p><p><strong>Input:</strong> ${esc(task.input)}</p><p><strong>Target:</strong> ${esc(task.target)}</p><p><strong>Method:</strong> ${esc(task.evaluation)}</p><p class="muted"><strong>Limitation:</strong> ${esc(task.limitation)}</p>`;
 }
-function renderHealth(health){
-  const h = health||{};
-  const status = h.status||"unknown";
-  const label = status==="ok" ? "Healthy" : status==="degraded" ? "Degraded" : status==="failed" ? "Poll failed" : "Unknown";
-  const components = Object.entries(h.components||{}).map(([k,v])=>`${esc(k)}: ${esc(v)}`).join(" · ");
-  const lastSuccess = h.last_success_at ? `${fmtHKT(h.last_success_at)} HKT` : "none";
-  document.getElementById("health").innerHTML = `<div class="health-${esc(status)}">${esc(label)}</div><div class="tip">${esc(h.summary||"No health record yet")}</div><div class="meta">Last success: ${esc(lastSuccess)}<br>${components||"components unavailable"}</div>`;
+function datasetView(d){
+  if(!d)return "No dataset summary available.";
+  const positives=(d.positive_counts||[]).map((n,i)=>`<span class="badge">${esc(labels[d.targets?.[i]]||d.targets?.[i])}: ${esc(n)} positives</span>`).join("");
+  return `<table><tr><th>Samples</th><td>${esc(d.samples)}</td><th>Input shape</th><td>${esc((d.input_shape||[]).join(" × ")||"–")}</td></tr><tr><th>Time range</th><td colspan="3">${esc(d.time_start||"–")} → ${esc(d.time_end||"–")}</td></tr><tr><th>F3 baseline</th><td colspan="3">${d.has_advection_baseline?"present":"missing"}</td></tr></table><div style="margin-top:9px">${positives||"No label counts available."}</div>`;
 }
-function fmtHKT(iso){
-  const hk = new Date(new Date(iso).getTime() + 8*3600*1000);
-  return hk.toISOString().slice(0,16).replace("T"," ");
-}
-function setFreshness(iso){
-  const el = document.getElementById("freshness");
-  const observedAt = new Date(iso).getTime();
-  const ageMinutes = Number.isFinite(observedAt) ? Math.max(0, Math.floor((Date.now()-observedAt)/60000)) : null;
-  if(ageMinutes===null){ el.textContent="data freshness: unavailable"; el.className="stale"; return; }
-  const ageText = ageMinutes<60 ? `${ageMinutes} min ago` : `${Math.floor(ageMinutes/60)}h ${ageMinutes%60}m ago`;
-  const stale = ageMinutes>120;
-  el.textContent = stale ? `STALE DATA: ${ageText}` : `data freshness: ${ageText}`;
-  el.className = stale ? "stale" : "fresh";
-}
-(async function(){
-  const latest = await loadJson("data/latest.json");
-  const history = await loadJson("data/history.json");
-  const health = await loadOptionalJson("data/health.json", {status:"unknown"});
-  document.title = `Testing — ${fmtHKT(latest.ts)} HKT`;
-  setFreshness(latest.ts);
-  renderHealth(health);
-  document.getElementById("temp").textContent = latest.temp_mean===""||latest.temp_mean==null?"–":latest.temp_mean+"°C";
-  document.getElementById("hum").textContent = latest.hum_mean===""||latest.hum_mean==null?"–":latest.hum_mean+"%";
-  document.getElementById("rainSum").textContent = latest.rain_total===""||latest.rain_total==null?"–":latest.rain_total+" mm";
-  document.getElementById("rainPeak").textContent = latest.rain_main===""||latest.rain_main==null?"–":latest.rain_main+" mm";
-  const wd = document.getElementById("warnings");
-  const warns = latest.active_warnings.length? latest.active_warnings.map(w=>w.split(" (")[0]) : [];
-  Object.values(latest.official_levels||{}).forEach(l=>warns.push(l));
-  wd.innerHTML = warns.length ? warns.map(chip).join("") : `<span class="tip">none active</span>`;
-  const pd = document.getElementById("preds");
-  pd.innerHTML = Object.entries(latest.predictions||{}).map(([k,p])=>{
-    const detail=(latest.prediction_details||{})[k];
-    return `<div class="prob"><div class="lbl"><span>${esc(TARGET_LABELS[k]||k)}</span><span class="pct">${fmtPct(p)}</span></div>${bar(p)}<div class="mode">${esc(modelMode(detail))}</div></div>`;
-  }).join("");
-  const modeSummary = Object.entries(latest.prediction_details||{}).map(([k,d])=>`${TARGET_LABELS[k]||k}: ${modelMode(d)}`).join(" · ");
-  document.getElementById("meta").textContent =
-    `${modeSummary||"Prediction source unavailable"} · rainfall source: ${latest.rain_source||"legacy"} · snapshot ${fmtHKT(latest.ts)} HKT`;
-  const tips = document.getElementById("tips");
-  tips.innerHTML = (latest.special_tips||[]).length ? latest.special_tips.map(chip).join("") : `<span class="tip">none</span>`;
-  const tcEl = document.getElementById("tc");
-  if(latest.tc){
-    const t = latest.tc;
-    tcEl.innerHTML = [
-      `<div class="stat"><span>${t.id} · ${fmtHKT(t.ts)} HKT</span><b>${t.distance_km} km</b></div>`,
-      `<div class="stat"><span>Bearing from HK</span><b>${t.bearing_deg}°</b></div>`,
-      `<div class="stat"><span>Max wind</span><b>${t.wind_kts} kts</b></div>`,
-      `<div class="stat"><span>Pressure</span><b>${t.pressure_mb||"–"} mb</b></div>`,
-      t.forecast_24h_km!=null?`<div class="stat"><span>24h forecast dist</span><b>${t.forecast_24h_km} km${t.moving_toward_hk?" · closing":""}</b></div>`:""
-    ].join("");
-  } else {
-    tcEl.innerHTML = `<span class="tip">no active WP cyclone within 2500 km</span>`;
+function resultView(report){
+  if(report.status!=="completed"){
+    const reasons=(report.blocking_reasons||[]).map(r=>`<li>${esc(r)}</li>`).join("");
+    return `<div class="status status-${esc(report.status||"unknown")}">${esc(report.status||"not run")}</div><p>${esc(report.next_step||report.overall_conclusion||"Run a compatible benchmark to obtain results.")}</p>${reasons?`<ul class="reasons">${reasons}</ul>`:""}`;
   }
-  if(history && history.length>1) document.getElementById("chart").innerHTML = chart(history);
-  else document.getElementById("chart").outerHTML = `<div class="tip">collecting history…</div>`;
-})().catch(e=>{
-  const main=document.querySelector("main");
-  main.textContent="";
-  const card=document.createElement("div"); card.className="card";
-  const title=document.createElement("h2"); title.textContent="Data not ready";
-  const text=document.createElement("p"); text.className="tip"; text.textContent=`${e} — wait for the first poll run to complete, or check Actions ran successfully.`;
-  card.append(title,text); main.append(card);
-});
+  const rows=Object.entries(report.targets||{}).map(([key,m])=>{
+    const pass=m.beats_baseline===true;
+    return `<tr><td>${esc(labels[key]||key)}</td><td>${score(m.pr_auc)}</td><td>${score(m.baseline_pr_auc)}</td><td>${score(m.brier)}</td><td>${score(m.baseline_brier)}</td><td class="${pass?"yes":"no"}">${pass?"ADDED SKILL":"NO SKILL"}</td></tr>`;
+  }).join("");
+  return `<p><strong>${esc(report.overall_conclusion)}</strong></p><p class="muted">${esc(report.holdout||"")}</p><table><thead><tr><th>Target</th><th>CNN PR-AUC</th><th>Baseline PR-AUC</th><th>CNN Brier</th><th>Baseline Brier</th><th>Conclusion</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+(async()=>{
+  const [report,health]=await Promise.all([json("data/cnn_evaluation.json",{status:"not_run",overall_conclusion:"No CNN evaluation report found."}),json("data/health.json",{})]);
+  document.title=`CNN Benchmark — ${report.status||"not run"}`;
+  document.getElementById("status").innerHTML=`<div class="status status-${esc(report.status||"unknown")}">${esc(report.status||"not run")}</div><p>${esc(report.overall_conclusion||report.next_step||"Benchmark report unavailable.")}</p>`;
+  document.getElementById("task").innerHTML=taskView(report.task);
+  document.getElementById("health").innerHTML=healthView(health);
+  document.getElementById("dataset").innerHTML=datasetView(report.dataset);
+  document.getElementById("results").innerHTML=resultView(report);
+})();
 </script>
 </body>
 </html>
