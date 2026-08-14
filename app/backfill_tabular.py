@@ -24,9 +24,11 @@ Requires data/warning_events.csv with columns: type,start,end
 Rows without it are built with all warning flags 0 (features only — labels wrong;
 the script warns loudly and continues only with --allow-no-events).
 
-Semantics note: live rain_total is a sum over ~15-18 district gauges; a single
-station is scaled by --rain-scale (default 15) to approximate that magnitude.
-Backfilled rows leave TC-track and F3 features blank (train-time defaults apply).
+Semantics note: a NOAA single-station observation is not comparable to the
+HKO live district-maxima aggregate. Backfilled rows therefore retain the raw
+station one-hour rainfall, identify their source explicitly, and are excluded
+from the current live-schema model until a source-consistent historical dataset
+is available. TC-track and F3 features remain blank.
 """
 
 import argparse
@@ -49,6 +51,12 @@ ISD_URL = "https://www.ncei.noaa.gov/pub/data/noaa/isd-lite/{year}/{station}-{ye
 STATION = "450070-99999"  # Hong Kong International Airport (hourly, verified available)
 
 HK_OFFSET = timedelta(hours=8)
+
+from data_quality import (
+    DATA_SCHEMA_VERSION,
+    RAIN_SOURCE_NOAA_STATION,
+    validate_row,
+)
 
 EVENT_FLAGS = {
     "AMBER": ["w_RAIN_AMBER"],
@@ -108,7 +116,11 @@ def parse_isd_lite(raw_gz):
             "ts": ts,
             "temp": t,
             "rh": rel_humidity(t, td) if t is not None and td is not None else None,
-            "precip1h": max(0.0, val(10) or 0.0),
+            # Preserve missingness. For this station many hourly values are
+            # absent, and treating -9999 as zero was the root cause of a
+            # decades-long all-zero rainfall feature.
+            "precip1h": max(0.0, val(10)) if val(10) is not None else None,
+            "precip6h": max(0.0, val(11)) if val(11) is not None else None,
         })
     out.sort(key=lambda r: r["ts"])
     return out
@@ -143,35 +155,37 @@ def flags_at(events, ts):
     return active
 
 
-def build_rows(obs, events, rain_scale, csv_columns):
+def build_rows(obs, events, csv_columns):
     rows = []
-    rain_cum = 0.0
-    history = []  # (ts, rain_cum, temp, rh)
+    history = []  # (ts, temp, rh)
     for o in obs:
-        rain_mm = o["precip1h"] * rain_scale
-        rain_cum += rain_mm
+        rain_mm = o["precip1h"]
 
-        def back(minutes):
-            cutoff = o["ts"] - timedelta(minutes=minutes)
-            for h in history:  # oldest-first
-                if h[0] >= cutoff:
+        def prior_near_hour():
+            for h in reversed(history):
+                elapsed = (o["ts"] - h[0]).total_seconds() / 60.0
+                if 45 <= elapsed <= 75:
                     return h
             return None
 
-        p60 = back(60 + 5)
-        p180 = back(180 + 5)
+        p60 = prior_near_hour()
         hk = o["ts"] + HK_OFFSET
         row = dict.fromkeys(csv_columns, 0)
+        rain_value = round(rain_mm, 1) if rain_mm is not None else ""
         row.update({
+            "data_schema": DATA_SCHEMA_VERSION,
+            "rain_source": RAIN_SOURCE_NOAA_STATION,
             "ts": o["ts"].isoformat(timespec="seconds"),
             "temp_mean": round(o["temp"], 1) if o["temp"] is not None else "",
             "hum_mean": round(o["rh"], 1) if o["rh"] is not None else "",
-            "rain_total": round(rain_cum, 1),
-            "rain_main": round(rain_mm, 1),
-            "rain_1h": round(rain_cum - p60[1], 1) if p60 else 0.0,
-            "rain_3h": round(rain_cum - p180[1], 1) if p180 else 0.0,
-            "temp_1h_delta": round(o["temp"] - p60[2], 1) if p60 and None not in (o["temp"], p60[2]) else 0.0,
-            "hum_1h_delta": round(o["rh"] - p60[3], 1) if p60 and None not in (o["rh"], p60[3]) else 0.0,
+            "rain_total": rain_value,
+            "rain_main": rain_value,
+            "rain_1h": rain_value,
+            # The station's six-hour field is not a rolling three-hour
+            # accumulation, so do not fabricate a three-hour metric.
+            "rain_3h": "",
+            "temp_1h_delta": round(o["temp"] - p60[1], 1) if p60 and None not in (o["temp"], p60[1]) else 0.0,
+            "hum_1h_delta": round(o["rh"] - p60[2], 1) if p60 and None not in (o["rh"], p60[2]) else 0.0,
             "hour": hk.hour,
             "season": 1 if 5 <= hk.month <= 11 else 0,
             "tc_dist_km": "",
@@ -180,7 +194,8 @@ def build_rows(obs, events, rain_scale, csv_columns):
             "tc_trend_toward": "",
         })
         row.update(flags_at(events, o["ts"]))
-        history.append((o["ts"], rain_cum, o["temp"], o["rh"]))
+        validate_row(row)
+        history.append((o["ts"], o["temp"], o["rh"]))
         history[:] = history[-8:]
         rows.append(row)
     return rows
@@ -216,8 +231,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("start_year", type=int)
     ap.add_argument("end_year", type=int)
-    ap.add_argument("--rain-scale", type=float, default=15.0,
-                    help="station->district-sum scale factor for rain features")
+    ap.add_argument("--rain-scale", type=float, default=None,
+                    help="deprecated; station observations are no longer scaled")
     ap.add_argument("--station", default=STATION)
     ap.add_argument("--allow-no-events", action="store_true",
                     help="build feature rows even without data/warning_events.csv (labels all 0)")
@@ -242,7 +257,7 @@ def main():
             print(f"[backfill-tab] {year}: download failed ({e}) — skipping")
             continue
         obs = parse_isd_lite(raw)
-        rows = build_rows(obs, events, args.rain_scale, CSV_COLUMNS)
+        rows = build_rows(obs, events, CSV_COLUMNS)
         all_rows.extend(rows)
         n_amber = sum(1 for r in rows if r.get("w_RAIN_AMBER") == 1)
         n_tc3 = sum(1 for r in rows if r.get("w_TC3") == 1)

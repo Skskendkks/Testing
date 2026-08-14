@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from features import FEATURE_COLS, TARGETS, apply_cal, feature_vector, sigmoid, _trees_prob
 from rules import rule_probs
+from data_quality import DATA_SCHEMA_VERSION, training_row_is_compatible
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
@@ -73,7 +74,11 @@ def load_rows():
             continue
         out.append(r)
     out.sort(key=lambda r: r["_dt"])
-    return out
+    compatible = [r for r in out if training_row_is_compatible(r)]
+    skipped = len(out) - len(compatible)
+    if skipped:
+        print(f"[train] excluded {skipped} rows outside the current rainfall schema")
+    return compatible
 
 
 def build_samples(rows, target):
@@ -169,6 +174,7 @@ def main():
     generated = datetime.now().isoformat(timespec="seconds")
     meta = {
         "artifact_version": 2,
+        "data_schema": DATA_SCHEMA_VERSION,
         "feature_cols": list(FEATURE_COLS),
         "n_total": n,
         "generated": generated,

@@ -13,6 +13,11 @@ from features import TARGETS, TARGET_LABELS, blend_weights, predict_ai
 import jtwc
 from notify import ai_alert_keys, load_notified, save_notified, send_email
 from rules import rule_probs
+from data_quality import (
+    DATA_SCHEMA_VERSION,
+    RAIN_SOURCE_HKO_DISTRICT_MAXIMA,
+    validate_row,
+)
 import grid as gridmod
 
 try:
@@ -35,6 +40,8 @@ WARNSUM_URL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataT
 HK_OFFSET = timedelta(hours=8)
 
 CSV_COLUMNS = [
+    "data_schema",
+    "rain_source",
     "ts",
     "temp_mean",
     "hum_mean",
@@ -159,25 +166,30 @@ def build_row(weather, warnsum, messages, levels, prior_rows, tc_feats, f3_feats
     rains = [d["max"] for d in weather.get("rainfall", {}).get("data", []) if isinstance(d.get("max"), (int, float))]
     temp_mean = round(sum(temps) / len(temps), 1) if temps else None
     hum_mean = round(sum(hums) / len(hums), 1) if hums else None
+    # HKO supplies a one-hour window per district. The sum is an aggregate of
+    # district maxima, not a geographic accumulation; the peak is the only
+    # directly comparable one-hour rainfall feature. Do not subtract two
+    # independent one-hour windows to manufacture 1h/3h accumulations.
     rain_total = round(sum(rains), 1) if rains else None
     rain_main = round(max(rains), 1) if rains else None
+    rain_1h = rain_main
+    rain_3h = ""
 
     recent_60 = rows_within(prior_rows, 60)
-    recent_180 = rows_within(prior_rows, 180)
-    rain_1h = rain_total - _f(recent_60[0], "rain_total") if recent_60 else 0.0
-    rain_3h = rain_total - _f(recent_180[0], "rain_total") if recent_180 else 0.0
     hum_1h_delta = (hum_mean - _f(recent_60[0], "hum_mean")) if recent_60 and hum_mean is not None else 0.0
     temp_1h_delta = (temp_mean - _f(recent_60[0], "temp_mean")) if recent_60 and temp_mean is not None else 0.0
 
     hk_now = now + HK_OFFSET
     row = {
+        "data_schema": DATA_SCHEMA_VERSION,
+        "rain_source": RAIN_SOURCE_HKO_DISTRICT_MAXIMA,
         "ts": now.isoformat(timespec="seconds"),
         "temp_mean": temp_mean if temp_mean is not None else "",
         "hum_mean": hum_mean if hum_mean is not None else "",
         "rain_total": rain_total if rain_total is not None else "",
         "rain_main": rain_main if rain_main is not None else "",
-        "rain_1h": round(rain_1h, 1),
-        "rain_3h": round(rain_3h, 1),
+        "rain_1h": round(rain_1h, 1) if rain_1h is not None else "",
+        "rain_3h": rain_3h,
         "hum_1h_delta": round(hum_1h_delta, 1),
         "temp_1h_delta": round(temp_1h_delta, 1),
         "hour": hk_now.hour,
@@ -194,6 +206,7 @@ def build_row(weather, warnsum, messages, levels, prior_rows, tc_feats, f3_feats
     row["tc_dist_rate"] = round(tc_feats.get("tc_dist_km", 2000) - prev_dist, 1) if prev_dist else 0.0
     for key, value in (f3_feats or f3_features(None)).items():
         row[key] = value
+    validate_row(row)
     return row, temps, hums, rains
 
 
@@ -248,6 +261,7 @@ def official_changes(prev_state, warnsum, levels, messages):
 
 
 def write_csv(rows, new_row):
+    validate_row(new_row)
     DATA_DIR.mkdir(exist_ok=True)
     all_rows = rows + [new_row]
     with open(SNAPSHOT_CSV, "w", newline="", encoding="utf-8") as f:
@@ -262,6 +276,8 @@ def build_history(rows):
     buckets = {}
     cutoff = datetime.now(timezone.utc) - timedelta(days=7)
     for r in rows:
+        if r.get("data_schema") != DATA_SCHEMA_VERSION:
+            continue
         ts = datetime.fromisoformat(r["ts"])
         if ts < cutoff:
             continue
@@ -271,7 +287,9 @@ def build_history(rows):
             b["temps"].append(_f(r, "temp_mean"))
         if r.get("hum_mean") != "":
             b["hums"].append(_f(r, "hum_mean"))
-        b["rain"].append(_f(r, "rain_total"))
+        # For the chart, use the directly observed one-hour peak rather than
+        # the sum of district maxima, which is not a territorial accumulation.
+        b["rain"].append(_f(r, "rain_1h"))
         b["rain1h"].append(_f(r, "rain_1h"))
         active = sum(1 for k, v in r.items() if k and k.startswith("w_") and v == "1")
         b["warns"] = max(b["warns"], active)
@@ -387,6 +405,8 @@ def main():
 
     rows = write_csv(rows, row)
     write_json(LATEST_JSON, {
+        "data_schema": row["data_schema"],
+        "rain_source": row["rain_source"],
         "ts": row["ts"],
         "temp_mean": row["temp_mean"],
         "hum_mean": row["hum_mean"],

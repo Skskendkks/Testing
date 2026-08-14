@@ -48,8 +48,8 @@
     <div class="card"><h2>Current conditions</h2>
       <div class="stat"><span>Temperature</span><b id="temp">–</b></div>
       <div class="stat"><span>Humidity</span><b id="hum">–</b></div>
-      <div class="stat"><span>Rainfall (total)</span><b id="rain">–</b></div>
-      <div class="stat"><span>Rain last 1h / 3h</span><b id="rain13">–</b></div>
+      <div class="stat"><span>District-maxima sum (past 1h)</span><b id="rainSum">–</b></div>
+      <div class="stat"><span>Peak district rainfall (past 1h)</span><b id="rainPeak">–</b></div>
     </div>
     <div class="card"><h2>Official warnings</h2><div id="warnings"><span class="tip">none active</span></div></div>
   </div>
@@ -58,7 +58,7 @@
   </div>
   <div class="card"><h2>Special wx tips (HKO)</h2><div id="tips"><span class="tip">none</span></div></div>
   <div class="card"><h2>Tropical cyclones (JTWC)</h2><div id="tc"><span class="tip">none near Hong Kong</span></div></div>
-  <div class="card"><h2>Last 7 days · hourly rainfall (mm)</h2><svg id="chart" viewBox="0 0 700 120" preserveAspectRatio="none"></svg></div>
+  <div class="card"><h2>Last 7 days · peak district rainfall, 1h (mm)</h2><svg id="chart" viewBox="0 0 700 120" preserveAspectRatio="none"></svg></div>
 </main>
 <footer>
   Data: HKO Open Data API (<a href="https://www.hko.gov.hk/en/abouthko/opendata_intro.htm">hko.gov.hk</a>) · Cyclone tracks: NOAA ATCF (JTWC). Testing predictions are experimental and not official forecasts. Do not use for safety-critical decisions — refer to official HKO warnings for work/school/evacuation decisions.
@@ -104,8 +104,8 @@ function setFreshness(iso){
   setFreshness(latest.ts);
   document.getElementById("temp").textContent = latest.temp_mean===""||latest.temp_mean==null?"–":latest.temp_mean+"°C";
   document.getElementById("hum").textContent = latest.hum_mean===""||latest.hum_mean==null?"–":latest.hum_mean+"%";
-  document.getElementById("rain").textContent = latest.rain_total===""||latest.rain_total==null?"–":latest.rain_total+" mm";
-  document.getElementById("rain13").textContent = `${latest.rain_1h} / ${latest.rain_3h} mm`;
+  document.getElementById("rainSum").textContent = latest.rain_total===""||latest.rain_total==null?"–":latest.rain_total+" mm";
+  document.getElementById("rainPeak").textContent = latest.rain_main===""||latest.rain_main==null?"–":latest.rain_main+" mm";
   const wd = document.getElementById("warnings");
   const warns = latest.active_warnings.length? latest.active_warnings.map(w=>w.split(" (")[0]) : [];
   Object.values(latest.official_levels||{}).forEach(l=>warns.push(l));
@@ -118,7 +118,7 @@ function setFreshness(iso){
     ? Object.entries(bw).map(([k,w])=>`${k}:${w}`).join(" ")
     : bw;
   document.getElementById("meta").textContent =
-    `AI blend weight: ${bwText} · snapshot ${fmtHKT(latest.ts)} HKT`;
+    `AI blend weight: ${bwText} · rainfall source: ${latest.rain_source||"legacy"} · snapshot ${fmtHKT(latest.ts)} HKT`;
   const tips = document.getElementById("tips");
   tips.innerHTML = (latest.special_tips||[]).length ? latest.special_tips.map(chip).join("") : `<span class="tip">none</span>`;
   const tcEl = document.getElementById("tc");
