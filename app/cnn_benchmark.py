@@ -17,8 +17,10 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import cnn
+from dataset_manifest import DATASET_SCHEMA, sha256_file
 
 DATASET_PATH = ROOT / "data" / "grid_dataset.npz"
+MANIFEST_PATH = ROOT / "data" / "grid_dataset.manifest.json"
 MODEL_REPORT = ROOT / "model" / "cnn_evaluation.json"
 SITE_REPORT = ROOT / "site" / "data" / "cnn_evaluation.json"
 MIN_SAMPLES = 200
@@ -60,6 +62,8 @@ def dataset_summary(data):
         "time_start": str(times[0]) if times is not None and len(times) else None,
         "time_end": str(times[-1]) if times is not None and len(times) else None,
         "has_advection_baseline": "B" in data,
+        "has_label_times": "label_times" in data,
+        "has_lead_minutes": "lead_minutes" in data,
     }
     return summary
 
@@ -67,7 +71,7 @@ def dataset_summary(data):
 def validate_dataset(data):
     """Return clear blocking reasons before allocating training compute."""
     reasons = []
-    required = {"X", "y", "B", "times"}
+    required = {"X", "y", "B", "times", "label_times", "lead_minutes"}
     keys = set(data.files if hasattr(data, "files") else data.keys())
     missing = sorted(required - keys)
     if missing:
@@ -76,6 +80,8 @@ def validate_dataset(data):
     y = data["y"] if "y" in keys else None
     b = data["B"] if "B" in keys else None
     times = data["times"] if "times" in keys else None
+    label_times = data["label_times"] if "label_times" in keys else None
+    lead_minutes = data["lead_minutes"] if "lead_minutes" in keys else None
     if x is None or x.ndim != 4 or x.shape[1] != cnn.IN_CH or tuple(x.shape[2:]) != (cnn.SIZE, cnn.SIZE):
         shape = tuple(x.shape) if x is not None else None
         reasons.append(f"expected X shape (N, {cnn.IN_CH}, {cnn.SIZE}, {cnn.SIZE}), got {shape}")
@@ -85,6 +91,13 @@ def validate_dataset(data):
         reasons.append("B must contain one F3 advection-baseline value per sample")
     if times is not None and (x is None or len(times) != x.shape[0]):
         reasons.append("times must contain one timestamp per sample")
+    if label_times is not None and (x is None or len(label_times) != x.shape[0]):
+        reasons.append("label_times must contain one timestamp per sample")
+    if lead_minutes is not None:
+        if x is None or lead_minutes.ndim != 1 or lead_minutes.shape[0] != x.shape[0]:
+            reasons.append("lead_minutes must contain one lead time per sample")
+        elif np.any(lead_minutes < 90) or np.any(lead_minutes > 150):
+            reasons.append("lead_minutes must remain within the declared 90–150 minute target window")
     if x is not None and x.shape[0] < MIN_SAMPLES:
         reasons.append(f"need at least {MIN_SAMPLES} samples for a holdout benchmark; found {x.shape[0]}")
     if not reasons and x is not None and y is not None and times is not None:
@@ -101,19 +114,37 @@ def validate_dataset(data):
     return reasons
 
 
-def blocked_report(summary, reasons):
+def load_and_validate_manifest():
+    if not MANIFEST_PATH.exists():
+        return None, ["data/grid_dataset.manifest.json is missing"]
+    try:
+        manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        return None, [f"dataset manifest is unreadable: {type(exc).__name__}"]
+    reasons = []
+    if manifest.get("dataset_schema") != DATASET_SCHEMA:
+        reasons.append(f"manifest dataset_schema must be {DATASET_SCHEMA}")
+    if manifest.get("dataset_file") != DATASET_PATH.name:
+        reasons.append("manifest points to a different dataset file")
+    if manifest.get("dataset_sha256") != sha256_file(DATASET_PATH):
+        reasons.append("dataset SHA-256 does not match its manifest")
+    return manifest, reasons
+
+
+def blocked_report(summary, reasons, manifest=None):
     return {
         "schema_version": 1,
         "generated": _iso_now(),
         "status": "blocked",
         "task": TASK,
         "dataset": summary,
+        "manifest": manifest,
         "blocking_reasons": reasons,
         "next_step": "Rebuild data/grid_dataset.npz with app/backfill.py using the 5-channel schema and B baseline before running this benchmark.",
     }
 
 
-def completed_report(summary, metrics):
+def completed_report(summary, metrics, manifest):
     targets = {}
     for target in cnn.V3_TARGETS:
         metric = metrics[target]
@@ -128,6 +159,7 @@ def completed_report(summary, metrics):
         "status": "completed",
         "task": TASK,
         "dataset": summary,
+        "manifest": manifest,
         "holdout": "last 20% of timestamp-sorted samples; the model never trains on these samples",
         "targets": targets,
         "overall_conclusion": "CNN shows added skill for at least one tested threshold" if any_skill else "CNN does not yet demonstrate added skill beyond the F3 baseline",
@@ -137,20 +169,23 @@ def completed_report(summary, metrics):
 def run(epochs=40, seed=0, quiet=False):
     if not DATASET_PATH.exists():
         report = blocked_report({"samples": 0, "input_shape": None, "targets": cnn.V3_TARGETS, "positive_counts": None,
-                                 "time_start": None, "time_end": None, "has_advection_baseline": False},
+                                 "time_start": None, "time_end": None, "has_advection_baseline": False,
+                                 "has_label_times": False, "has_lead_minutes": False},
                                 ["data/grid_dataset.npz is missing"])
         publish(report)
         return report
     data = np.load(DATASET_PATH, allow_pickle=False)
     summary = dataset_summary(data)
     reasons = validate_dataset(data)
+    manifest, manifest_reasons = load_and_validate_manifest()
+    reasons.extend(manifest_reasons)
     if reasons:
-        report = blocked_report(summary, reasons)
+        report = blocked_report(summary, reasons, manifest)
         publish(report)
         return report
     weights, metrics = cnn.train(data["X"], data["y"], B=data["B"], epochs=epochs, seed=seed, quiet=quiet)
     cnn.save_weights(weights, metrics, int(data["X"].shape[0]))
-    report = completed_report(summary, metrics)
+    report = completed_report(summary, metrics, manifest)
     publish(report)
     return report
 

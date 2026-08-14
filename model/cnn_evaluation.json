@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated": "2026-08-14T11:19:16+00:00",
+  "generated": "2026-08-14T11:30:10+00:00",
   "status": "blocked",
   "task": {
     "name": "F3-grid rainfall nowcast skill benchmark",
@@ -29,11 +29,15 @@
     ],
     "time_start": "2026-07-25T16:06:00+00:00",
     "time_end": "2026-08-01T15:54:00+00:00",
-    "has_advection_baseline": false
+    "has_advection_baseline": false,
+    "has_label_times": false,
+    "has_lead_minutes": false
   },
+  "manifest": null,
   "blocking_reasons": [
-    "dataset is missing required arrays: B",
-    "expected X shape (N, 5, 32, 32), got (650, 3, 32, 32)"
+    "dataset is missing required arrays: B, label_times, lead_minutes",
+    "expected X shape (N, 5, 32, 32), got (650, 3, 32, 32)",
+    "data/grid_dataset.manifest.json is missing"
   ],
   "next_step": "Rebuild data/grid_dataset.npz with app/backfill.py using the 5-channel schema and B baseline before running this benchmark."
 }

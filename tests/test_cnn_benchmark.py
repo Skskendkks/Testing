@@ -22,6 +22,8 @@ class CnnBenchmarkTests(unittest.TestCase):
             "y": y,
             "B": np.zeros(n, dtype=np.float32),
             "times": np.array([f"2026-01-01T{i:04d}" for i in range(n)]),
+            "label_times": np.array([f"2026-01-01T{i + 120:04d}" for i in range(n)]),
+            "lead_minutes": np.full(n, 120.0, dtype=np.float32),
         }
 
     def test_compatible_dataset_passes_contract(self):
@@ -40,13 +42,19 @@ class CnnBenchmarkTests(unittest.TestCase):
         self.assertTrue(any("missing required arrays: B" in reason for reason in reasons))
         self.assertTrue(any("expected X shape" in reason for reason in reasons))
 
+    def test_out_of_window_lead_time_is_rejected(self):
+        data = self.valid_data()
+        data["lead_minutes"][0] = 80.0
+        reasons = validate_dataset(data)
+        self.assertTrue(any("90–150" in reason for reason in reasons))
+
     def test_completed_report_requires_baseline_comparison_for_conclusion(self):
         summary = dataset_summary(self.valid_data())
         metrics = {
             target: {"pr_auc": 0.1, "brier": 0.2, "beats_baseline": target == "rain120_15mm"}
             for target in cnn.V3_TARGETS
         }
-        report = completed_report(summary, metrics)
+        report = completed_report(summary, metrics, {"dataset_sha256": "test-hash"})
         self.assertEqual(report["status"], "completed")
         self.assertIn("added skill", report["targets"]["rain120_15mm"]["conclusion"])
         self.assertIn("CNN shows added skill", report["overall_conclusion"])
