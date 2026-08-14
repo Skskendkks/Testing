@@ -36,10 +36,12 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from grid import N_LEADS, downsample, parse_grid_csv, window_indices
+from dataset_manifest import build_manifest, write_manifest
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 DATASET_PATH = DATA_DIR / "grid_dataset.npz"
+MANIFEST_PATH = DATA_DIR / "grid_dataset.manifest.json"
 SNAPSHOT_CSV = DATA_DIR / "snapshots.csv"
 EVENT_DAYS_TXT = DATA_DIR / "event_days.txt"
 
@@ -96,11 +98,23 @@ def make_input(leads):
     return x
 
 
+def dedupe_snapshots(all_snap):
+    """Keep one F3 snapshot per input timestamp and report archive overlap."""
+    unique = {}
+    duplicates = 0
+    for ts, leads in all_snap:
+        if ts in unique:
+            duplicates += 1
+            continue
+        unique[ts] = leads
+    return sorted(unique.items(), key=lambda item: item[0]), duplicates
+
+
 def build_samples(all_snap):
     """Pair each snapshot with the snapshot ~120 min later; label from its lead-0 frame."""
     all_snap.sort(key=lambda s: s[0])
     times = [s[0] for s in all_snap]
-    X, y, B, T = [], [], [], []
+    X, y, B, T, LT, LM = [], [], [], [], [], []
     for ts, leads in all_snap:
         lo = bisect_left(times, ts + timedelta(minutes=90))
         best = None
@@ -119,20 +133,23 @@ def build_samples(all_snap):
         # advection/persistence baseline: HKO's own ~2h lead frame from the current snapshot
         B.append(float(np.max(np.array(leads[3], dtype=np.float32))))
         T.append(ts.isoformat())
-    return X, y, B, T
+        LT.append(all_snap[best[0]][0].isoformat())
+        LM.append(float(best[1]))
+    return X, y, B, T, LT, LM
 
 
 def load_existing():
     if not DATASET_PATH.exists():
         return None
     d = np.load(DATASET_PATH, allow_pickle=False)
-    if "X" not in d or d["X"].ndim != 4 or d["X"].shape[1] != N_CHANNELS or "B" not in d:
-        print("[backfill] existing dataset uses the old schema — rebuilding from scratch")
+    required = {"X", "y", "B", "times", "label_times", "lead_minutes"}
+    if (not required.issubset(d.files) or d["X"].ndim != 4 or d["X"].shape[1] != N_CHANNELS):
+        print("[backfill] existing dataset uses an older schema — rebuilding from scratch")
         return None
     return d
 
 
-def save_dataset(X, y, B, T):
+def save_dataset(X, y, B, T, LT, LM, provenance):
     existing = load_existing()
     if existing is not None:
         seen = set(T)
@@ -141,17 +158,26 @@ def save_dataset(X, y, B, T):
         y = list(existing["y"][keep]) + y
         B = list(existing["B"][keep]) + B
         T = [str(t) for t in existing["times"][keep]] + T
+        LT = [str(t) for t in existing["label_times"][keep]] + LT
+        LM = list(existing["lead_minutes"][keep]) + LM
     order = np.argsort(np.array(T))
     Xa = np.stack([np.asarray(X[i], dtype=np.float32) for i in order])
     ya = np.stack([np.asarray(y[i], dtype=np.float32) for i in order])
     Ba = np.array([B[i] for i in order], dtype=np.float32)
     Ta = np.array([T[i] for i in order])
+    LTa = np.array([LT[i] for i in order])
+    LMa = np.array([LM[i] for i in order], dtype=np.float32)
     DATA_DIR.mkdir(exist_ok=True)
-    np.savez_compressed(DATASET_PATH, X=Xa, y=ya, B=Ba, times=Ta)
+    np.savez_compressed(DATASET_PATH, X=Xa, y=ya, B=Ba, times=Ta, label_times=LTa, lead_minutes=LMa)
+    arrays = {"X": Xa, "y": ya, "B": Ba, "times": Ta, "label_times": LTa, "lead_minutes": LMa}
+    manifest = build_manifest(DATASET_PATH, arrays, thresholds_mm=THRESHOLDS_MM, provenance=provenance)
+    write_manifest(MANIFEST_PATH, manifest)
     print(f"[backfill] dataset: {Xa.shape[0]} samples ({Xa.shape[1]}ch) -> {DATASET_PATH} "
           f"({DATASET_PATH.stat().st_size / 1e6:.1f} MB)")
+    print(f"[backfill] manifest: {MANIFEST_PATH}")
     for k, name in enumerate(["rain120_15mm", "rain120_25mm", "rain120_35mm"]):
         print(f"  {name}: {int(ya[:, k].sum())} positives / {ya.shape[0]}")
+    return manifest
 
 
 def event_days_from_snapshots(start, end):
@@ -252,19 +278,35 @@ def main():
     if not days:
         return
     all_snap = []
+    successful_days, failed_days = [], []
     for d in days:
         try:
             all_snap.extend(fetch_day(d, verbose=True))
+            successful_days.append(d.strftime("%Y-%m-%d"))
         except Exception as e:
-            print(f"[backfill] {d:%Y-%m-%d}: failed ({e}) — skipping")
+            message = f"{type(e).__name__}: {e}"
+            print(f"[backfill] {d:%Y-%m-%d}: failed ({message}) — skipping")
+            failed_days.append({"date": d.strftime("%Y-%m-%d"), "error": message})
     if not all_snap:
         print("[backfill] no snapshots fetched")
         return
-    X, y, B, T = build_samples(all_snap)
+    all_snap, duplicate_snapshots = dedupe_snapshots(all_snap)
+    X, y, B, T, LT, LM = build_samples(all_snap)
     if not X:
         print("[backfill] no labelable samples (need snapshots ~2h apart)")
         return
-    save_dataset(X, y, B, T)
+    provenance = {
+        "source": "HKO F3 gridded rainfall nowcast historical archive",
+        "archive_url_template": ARCHIVE_GET,
+        "target_url": TARGET_URL,
+        "selection": "event-plus-quiet" if args.events else "date-range",
+        "requested_days": [d.strftime("%Y-%m-%d") for d in days],
+        "successful_days": successful_days,
+        "failed_days": failed_days,
+        "duplicate_archive_snapshots_dropped": duplicate_snapshots,
+        "random_seed": 0 if args.events else None,
+    }
+    save_dataset(X, y, B, T, LT, LM, provenance)
 
 
 if __name__ == "__main__":

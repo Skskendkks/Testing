@@ -64,9 +64,12 @@ The benchmark writes these artifacts:
 
 | File | Meaning |
 |---|---|
-| `model/cnn_evaluation.json` | Full machine-readable result: task definition, dataset summary, status, blocking reasons or per-target metrics. |
+| `data/grid_dataset.manifest.json` | Dataset schema, SHA-256, source days, archive failures, duplicate removal, input gaps, input/label time span, actual lead-time distribution and class counts. |
+| `model/cnn_evaluation.json` | Full machine-readable result: task definition, dataset summary, manifest evidence, status, blocking reasons or per-target metrics. |
 | `site/data/cnn_evaluation.json` | Copy rendered by the static benchmark dashboard. |
 | `model/cnn_weights.json` | CNN weights from a compatible benchmark run. They are not used to issue live weather forecasts. |
+
+The builder rejects old datasets and records archive failures rather than silently treating incomplete history as valid. A small date range is useful to verify ingestion, but it will remain `blocked` until it satisfies the minimum sample and chronological-holdout-positive requirements.
 
 A benchmark can produce three useful outcomes.
 
