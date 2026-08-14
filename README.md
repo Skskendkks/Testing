@@ -1,6 +1,6 @@
-# SkyWager
+# Testing
 
-<https://skskendkks.github.io/skywager/site/index.html>
+<https://skskendkks.github.io/testing/site/index.html>
 
 Unofficial Hong Kong weather-warning nowcast. Polls HKO Open Data hourly, predicts
 warning probability (rain, Amber/Red Rainstorm, Typhoon Signal 3+) using a hybrid of
