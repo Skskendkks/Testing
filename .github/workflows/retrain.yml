@@ -1,19 +1,25 @@
-name: retrain
+name: cnn-evaluation
 
 on:
   schedule:
-    - cron: "17 3 * * *"
+    # Re-evaluate weekly only after data collection has accumulated; manual runs are preferred for experiments.
+    - cron: "42 3 * * 0"
   workflow_dispatch:
+    inputs:
+      epochs:
+        description: "CNN epochs for this benchmark run"
+        required: false
+        default: "40"
 
 permissions:
   contents: write
 
 concurrency:
-  group: retrain
+  group: cnn-evaluation
   cancel-in-progress: false
 
 jobs:
-  retrain:
+  evaluate:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -27,25 +33,19 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install deps
-        run: pip install --quiet scikit-learn numpy
+      - name: Install dependencies
+        run: pip install --quiet numpy
 
       - name: Run regression tests
         run: python -m unittest discover -s tests -v
 
-      - name: Train tabular models
-        run: python app/train.py
+      - name: Run CNN skill benchmark
+        run: python app/cnn_benchmark.py --quiet --epochs "${{ inputs.epochs || '40' }}"
 
-      - name: Train CNN when dataset schema is compatible
-        run: python app/cnn.py
-
-      - name: Validate portable model artifacts
-        run: python app/check_artifacts.py
-
-      - name: Commit model
+      - name: Commit benchmark report and eligible artifact
         run: |
           git config user.name "testing-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add model
-          git diff --cached --quiet || git commit -m "retrain: $(date -u +%Y-%m-%dT%H:%MZ)"
+          git add model/cnn_evaluation.json model/cnn_weights.json site/data/cnn_evaluation.json
+          git diff --cached --quiet || git commit -m "cnn-evaluation: $(date -u +%Y-%m-%dT%H:%MZ)"
           git push

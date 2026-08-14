@@ -38,7 +38,7 @@ def latest_snapshot_time():
     return latest.get("ts")
 
 
-def success_status(row, *, f3_available, model_modes):
+def success_status(row, *, f3_available, model_modes=None, model_status=None):
     rain_available = row.get("rain_1h") not in (None, "")
     degraded = not rain_available or not f3_available
     return {
@@ -51,7 +51,7 @@ def success_status(row, *, f3_available, model_modes):
             "hko_weather": "ok",
             "rainfall": "ok" if rain_available else "unavailable",
             "f3_nowcast": "ok" if f3_available else "unavailable",
-            "model": "rules-only" if all(mode == "rules" for mode in model_modes.values()) else "available",
+            "model": model_status or ("rules-only" if model_modes and all(mode == "rules" for mode in model_modes.values()) else "available"),
         },
     }
 
