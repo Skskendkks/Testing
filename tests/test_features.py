@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "app"))
 
 import features
+from data_quality import DATA_SCHEMA_VERSION
 
 
 class PortableModelArtifactTests(unittest.TestCase):
@@ -30,7 +31,7 @@ class PortableModelArtifactTests(unittest.TestCase):
         entry["std"][2] = 0.0
         entry["coef"][2] = 0.0
         with patch.object(features, "load_trees", return_value={}), patch.object(
-            features, "load_weights", return_value={"amber_3h": entry}
+            features, "load_weights", return_value={"meta": {"data_schema": DATA_SCHEMA_VERSION}, "amber_3h": entry}
         ):
             out = features.predict_ai(self.row)
         self.assertIn("amber_3h", out)
@@ -43,7 +44,15 @@ class PortableModelArtifactTests(unittest.TestCase):
         entry["std"][2] = 0.0
         entry["coef"][2] = 0.2
         with patch.object(features, "load_trees", return_value={}), patch.object(
-            features, "load_weights", return_value={"amber_3h": entry}
+            features, "load_weights", return_value={"meta": {"data_schema": DATA_SCHEMA_VERSION}, "amber_3h": entry}
+        ):
+            out = features.predict_ai(self.row)
+        self.assertNotIn("amber_3h", out)
+
+    def test_artifact_with_old_data_schema_is_ignored(self):
+        entry = self.lr_entry()
+        with patch.object(features, "load_trees", return_value={}), patch.object(
+            features, "load_weights", return_value={"meta": {"data_schema": "1"}, "amber_3h": entry}
         ):
             out = features.predict_ai(self.row)
         self.assertNotIn("amber_3h", out)

@@ -2,6 +2,8 @@ import json
 import math
 from pathlib import Path
 
+from data_quality import DATA_SCHEMA_VERSION
+
 ROOT = Path(__file__).resolve().parent.parent
 MODEL_DIR = ROOT / "model"
 WEIGHTS_JSON = MODEL_DIR / "weights.json"
@@ -69,6 +71,10 @@ def load_trees():
 
 def load_blend():
     return _load_json(BLEND_JSON)
+
+
+def _uses_current_data_schema(payload):
+    return isinstance(payload, dict) and payload.get("meta", {}).get("data_schema") == DATA_SCHEMA_VERSION
 
 
 def _feat(row, col):
@@ -154,6 +160,10 @@ def predict_ai(row):
     """
     trees = load_trees() or {}
     weights = load_weights() or {}
+    if not _uses_current_data_schema(trees):
+        trees = {}
+    if not _uses_current_data_schema(weights):
+        weights = {}
     x = feature_vector(row)
     out = {}
     for target in TARGETS:
