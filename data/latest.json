@@ -1,11 +1,11 @@
 {
-  "ts": "2026-08-14T19:07:20+00:00",
-  "temp_mean": 27.2,
+  "ts": "2026-08-14T20:38:47+00:00",
+  "temp_mean": 26.5,
   "hum_mean": 91.0,
-  "rain_total": 30,
-  "rain_main": 13,
+  "rain_total": 184,
+  "rain_main": 29,
   "rain_1h": 0.0,
-  "rain_3h": -140.0,
+  "rain_3h": 124.0,
   "active_warnings": [
     "Rainstorm Warning Signal (ISSUE)",
     "Thunderstorm Warning (EXTEND)"
@@ -15,11 +15,11 @@
   ],
   "predictions": {
     "rain_1h": 0.45,
-    "amber_3h": 0.301,
-    "red_3h": 0.27,
+    "amber_3h": 0.421,
+    "red_3h": 0.72,
     "tc3_6h": 0.24
   },
-  "v3_grid_ts": "202608150318",
+  "v3_grid_ts": "202608150454",
   "official_levels": {
     "w_RAIN_AMBER": "Amber Rainstorm"
   },
