@@ -3,6 +3,7 @@ import json
 import os
 import re
 import sys
+import time
 import urllib.request
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -18,6 +19,7 @@ from data_quality import (
     RAIN_SOURCE_HKO_DISTRICT_MAXIMA,
     validate_row,
 )
+from health import publish as publish_health, success_status
 import grid as gridmod
 
 try:
@@ -101,10 +103,21 @@ LEVEL_NAMES = {
 }
 
 
-def http_get(url):
-    req = urllib.request.Request(url, headers={"User-Agent": "Testing/1.0 (personal weather nowcast)"})
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+def http_get(url, attempts=3):
+    """Fetch JSON with bounded retries for transient HKO network failures."""
+    error = None
+    for attempt in range(1, attempts + 1):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "Testing/1.0 (personal weather nowcast)"})
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except Exception as exc:
+            error = exc
+            if attempt < attempts:
+                wait_seconds = attempt
+                print(f"[poll] request failed ({type(exc).__name__}); retrying in {wait_seconds}s")
+                time.sleep(wait_seconds)
+    raise RuntimeError(f"request failed after {attempts} attempts: {error}") from error
 
 
 def parse_levels(messages):
@@ -221,6 +234,23 @@ def blend_probs(rules_p, ai_p, w_map):
         else:
             out[t] = round(r, 3)
     return out
+
+
+def prediction_details(rules_p, ai_p, w_map, probabilities):
+    """Explain whether each displayed probability is rules-only or blended."""
+    details = {}
+    for target in TARGETS:
+        mode = "rules"
+        if target in ai_p and w_map.get(target, 0.0) > 0:
+            mode = "blended"
+        details[target] = {
+            "final": probabilities.get(target, rules_p.get(target, 0.0)),
+            "rule": rules_p.get(target, 0.0),
+            "ai": ai_p.get(target),
+            "blend_weight": round(w_map.get(target, 0.0), 2) if target in ai_p else 0.0,
+            "mode": mode,
+        }
+    return details
 
 
 def active_warning_names(warnsum):
@@ -355,6 +385,11 @@ def main():
         except Exception as e:
             print(f"[poll] v3 cnn skipped: {e}")
 
+    details = prediction_details(rules_p, ai_p, w_map, probs)
+    if v3:
+        for target, probability in v3.items():
+            details[target] = {"final": probability, "rule": None, "ai": probability, "blend_weight": 1.0, "mode": "cnn"}
+
     prev_state = None
     if LAST_WARN.exists():
         with open(LAST_WARN, encoding="utf-8-sig") as f:
@@ -372,8 +407,9 @@ def main():
     notified = load_notified()
     alert_keys = ai_alert_keys(probs, notified, now)
     for k in alert_keys:
-        notify_lines.append(f"* {TARGET_LABELS[k]}: probability {probs[k]:.0%} (lead alert)")
-        notified[k] = now.isoformat(timespec="seconds")
+        mode = details.get(k, {}).get("mode", "rules")
+        mode_label = "rules-only" if mode == "rules" else ("rules + AI" if mode == "blended" else mode.upper())
+        notify_lines.append(f"* {TARGET_LABELS[k]}: probability {probs[k]:.0%} ({mode_label} lead alert)")
 
     nearest_tc = tc_state.get("nearest")
     tc_line = None
@@ -391,9 +427,11 @@ def main():
         body_lines = [f"Testing alert — {hk_now.strftime('%Y-%m-%d %H:%M')} HKT", ""]
         body_lines.extend(notify_lines)
         body_lines.append("")
-        body_lines.append("AI nowcast probabilities (next 1-6h):")
+        body_lines.append("Experimental nowcast probabilities (next 1-6h):")
         for t in TARGETS:
-            body_lines.append(f"  {TARGET_LABELS[t]}: {probs[t]:.0%}")
+            mode = details.get(t, {}).get("mode", "rules")
+            mode_label = "rules-only" if mode == "rules" else ("rules + AI" if mode == "blended" else mode.upper())
+            body_lines.append(f"  {TARGET_LABELS[t]}: {probs[t]:.0%} [{mode_label}]")
         if tc_line:
             body_lines.append("")
             body_lines.append(tc_line)
@@ -401,7 +439,9 @@ def main():
         body_lines.append(f"Dashboard: {pages_url()}")
         body_lines.append("")
         body_lines.append("Experimental, unofficial prediction. Always check https://www.hko.gov.hk for official warnings.")
-        send_email("[Testing] Weather alert", "\n".join(body_lines))
+        if send_email("[Testing] Weather alert", "\n".join(body_lines)):
+            for k in alert_keys:
+                notified[k] = now.isoformat(timespec="seconds")
 
     rows = write_csv(rows, row)
     write_json(LATEST_JSON, {
@@ -417,6 +457,7 @@ def main():
         "active_warnings": active_warning_names(warnsum),
         "special_tips": weather.get("specialWxTips", []),
         "predictions": probs,
+        "prediction_details": details,
         "v3_grid_ts": v3_grid_ts,
         "official_levels": {k: v for k, v in LEVEL_NAMES.items() if levels.get(k)},
         "tc": tc_state.get("nearest"),
@@ -426,6 +467,8 @@ def main():
     write_json(HISTORY_JSON, build_history(rows))
     write_json(SITE_DATA_DIR / "latest.json", json.loads(LATEST_JSON.read_text(encoding="utf-8")))
     write_json(SITE_DATA_DIR / "history.json", json.loads(HISTORY_JSON.read_text(encoding="utf-8")))
+    model_modes = {target: detail["mode"] for target, detail in details.items()}
+    publish_health(success_status(row, f3_available=snap is not None, model_modes=model_modes))
 
     STATE_DIR.mkdir(exist_ok=True)
     write_json(LAST_WARN, {"warnsum": warnsum, "levels": levels})
