@@ -1,24 +1,22 @@
 {
-  "ts": "2026-08-14T23:31:17+00:00",
-  "temp_mean": 26.7,
-  "hum_mean": 92.0,
-  "rain_total": 19,
-  "rain_main": 5,
-  "rain_1h": 2.0,
-  "rain_3h": -165.0,
+  "ts": "2026-08-15T01:45:01+00:00",
+  "temp_mean": 26.9,
+  "hum_mean": 94.0,
+  "rain_total": 153,
+  "rain_main": 26,
+  "rain_1h": 0.0,
+  "rain_3h": 134.0,
   "active_warnings": [
-    "Thunderstorm Warning (EXTEND)"
+    "Thunderstorm Warning (UPDATE)"
   ],
-  "special_tips": [
-    "Widespread heavy rain may affect Hong Kong in a couple of hours. Members of the public should be on the alert."
-  ],
+  "special_tips": [],
   "predictions": {
-    "rain_1h": 0.7,
-    "amber_3h": 0.212,
-    "red_3h": 0.02,
+    "rain_1h": 0.45,
+    "amber_3h": 0.409,
+    "red_3h": 0.47,
     "tc3_6h": 0.24
   },
-  "v3_grid_ts": "202608150742",
+  "v3_grid_ts": "202608150954",
   "official_levels": {},
   "tc": null,
   "tc_scanned": [],
