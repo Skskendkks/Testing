@@ -1,20 +1,22 @@
 {
-  "ts": "2026-08-15T22:32:51+00:00",
-  "temp_mean": 27.6,
-  "hum_mean": 89.0,
-  "rain_total": 0,
-  "rain_main": 0,
-  "rain_1h": 0.0,
-  "rain_3h": 0.0,
-  "active_warnings": [],
+  "ts": "2026-08-15T23:28:51+00:00",
+  "temp_mean": 27.9,
+  "hum_mean": 88.0,
+  "rain_total": 1,
+  "rain_main": 1,
+  "rain_1h": 1.0,
+  "rain_3h": 1.0,
+  "active_warnings": [
+    "Very Hot Weather Warning (ISSUE)"
+  ],
   "special_tips": [],
   "predictions": {
-    "rain_1h": 0.1,
-    "amber_3h": 0.022,
+    "rain_1h": 0.35,
+    "amber_3h": 0.021,
     "red_3h": 0.02,
     "tc3_6h": 0.24
   },
-  "v3_grid_ts": "202608160642",
+  "v3_grid_ts": "202608160742",
   "official_levels": {},
   "tc": null,
   "tc_scanned": [],
