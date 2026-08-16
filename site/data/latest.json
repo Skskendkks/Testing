@@ -1,11 +1,11 @@
 {
-  "ts": "2026-08-16T05:36:48+00:00",
-  "temp_mean": 33.1,
-  "hum_mean": 67.0,
+  "ts": "2026-08-16T06:54:18+00:00",
+  "temp_mean": 33.5,
+  "hum_mean": 61.0,
   "rain_total": 0,
   "rain_main": 0,
   "rain_1h": 0.0,
-  "rain_3h": -7.0,
+  "rain_3h": 0.0,
   "active_warnings": [
     "Very Hot Weather Warning (ISSUE)"
   ],
@@ -16,7 +16,7 @@
     "red_3h": 0.02,
     "tc3_6h": 0.24
   },
-  "v3_grid_ts": "202608161354",
+  "v3_grid_ts": "202608161506",
   "official_levels": {},
   "tc": null,
   "tc_scanned": [],
