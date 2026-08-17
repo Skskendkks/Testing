@@ -3,17 +3,17 @@
     "WHOT": {
       "name": "Very Hot Weather Warning",
       "code": "WHOT",
-      "actionCode": "REISSUE",
+      "actionCode": "CANCEL",
       "issueTime": "2026-08-16T06:45:00+08:00",
-      "updateTime": "2026-08-17T06:45:00+08:00"
+      "updateTime": "2026-08-17T16:20:00+08:00"
     },
     "WTS": {
       "name": "Thunderstorm Warning",
       "code": "WTS",
       "actionCode": "EXTEND",
       "issueTime": "2026-08-17T10:35:00+08:00",
-      "expireTime": "2026-08-17T16:30:00+08:00",
-      "updateTime": "2026-08-17T14:00:00+08:00"
+      "expireTime": "2026-08-17T18:30:00+08:00",
+      "updateTime": "2026-08-17T16:00:00+08:00"
     }
   },
   "levels": {}
