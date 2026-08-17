@@ -1,25 +1,25 @@
 {
-  "ts": "2026-08-17T04:53:21+00:00",
-  "temp_mean": 30.8,
+  "ts": "2026-08-17T05:43:57+00:00",
+  "temp_mean": 29.7,
   "hum_mean": 88.0,
-  "rain_total": 107,
-  "rain_main": 16,
-  "rain_1h": 0.0,
-  "rain_3h": 90.0,
+  "rain_total": 196,
+  "rain_main": 44,
+  "rain_1h": 89.0,
+  "rain_3h": 179.0,
   "active_warnings": [
     "Very Hot Weather Warning (REISSUE)",
     "Thunderstorm Warning (EXTEND)"
   ],
   "special_tips": [
-    "Thundery showers triggered by high temperatures are affecting Hong Kong. Showers are expected to be heavier over parts of the territory with squally thunderstorms in the next few hours. Members of the public should be on the alert."
+    "Widespread heavy rain may affect Hong Kong in a couple of hours. Members of the public should be on the alert."
   ],
   "predictions": {
-    "rain_1h": 0.25,
-    "amber_3h": 0.356,
-    "red_3h": 0.47,
+    "rain_1h": 0.75,
+    "amber_3h": 0.403,
+    "red_3h": 0.62,
     "tc3_6h": 0.24
   },
-  "v3_grid_ts": "202608171306",
+  "v3_grid_ts": "202608171354",
   "official_levels": {},
   "tc": null,
   "tc_scanned": [],
