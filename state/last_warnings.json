@@ -6,14 +6,6 @@
       "actionCode": "ISSUE",
       "issueTime": "2026-08-18T22:10:00+08:00",
       "updateTime": "2026-08-18T22:10:00+08:00"
-    },
-    "WTS": {
-      "name": "Thunderstorm Warning",
-      "code": "WTS",
-      "actionCode": "CANCEL",
-      "issueTime": "2026-08-18T19:00:00+08:00",
-      "expireTime": "2026-08-18T22:30:00+08:00",
-      "updateTime": "2026-08-18T22:30:00+08:00"
     }
   },
   "levels": {}

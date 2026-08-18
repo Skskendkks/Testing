@@ -1,25 +1,24 @@
 {
-  "ts": "2026-08-18T14:44:47+00:00",
-  "temp_mean": 28.5,
-  "hum_mean": 82.0,
-  "rain_total": 59,
-  "rain_main": 10,
-  "rain_1h": 18.0,
-  "rain_3h": 53.0,
+  "ts": "2026-08-18T15:40:12+00:00",
+  "temp_mean": 28.7,
+  "hum_mean": 79.0,
+  "rain_total": 0,
+  "rain_main": 0,
+  "rain_1h": -59.0,
+  "rain_3h": -6.0,
   "active_warnings": [
-    "Strong Monsoon Signal (ISSUE)",
-    "Thunderstorm Warning (CANCEL)"
+    "Strong Monsoon Signal (ISSUE)"
   ],
   "special_tips": [
     "Strong winds are expected from the east. The public should beware of the possible danger brought by rough seas."
   ],
   "predictions": {
-    "rain_1h": 0.75,
-    "amber_3h": 0.393,
-    "red_3h": 0.22,
+    "rain_1h": 0.1,
+    "amber_3h": 0.019,
+    "red_3h": 0.02,
     "tc3_6h": 0.24
   },
-  "v3_grid_ts": "202608182254",
+  "v3_grid_ts": "202608182354",
   "official_levels": {},
   "tc": null,
   "tc_scanned": [],
