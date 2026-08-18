@@ -1,22 +1,24 @@
 {
-  "ts": "2026-08-18T13:02:56+00:00",
-  "temp_mean": 29.5,
-  "hum_mean": 76.0,
-  "rain_total": 6,
-  "rain_main": 6,
-  "rain_1h": 0.0,
-  "rain_3h": 6.0,
+  "ts": "2026-08-18T13:51:39+00:00",
+  "temp_mean": 28.8,
+  "hum_mean": 86.0,
+  "rain_total": 41,
+  "rain_main": 11,
+  "rain_1h": 35.0,
+  "rain_3h": 41.0,
   "active_warnings": [
-    "Thunderstorm Warning (EXTEND)"
+    "Thunderstorm Warning (UPDATE)"
   ],
-  "special_tips": [],
+  "special_tips": [
+    "Intense gusts reaching 70 kilometres per hour or above may continue to affect Hong Kong. Members of public should seek safe shelter as soon as possible."
+  ],
   "predictions": {
-    "rain_1h": 0.25,
-    "amber_3h": 0.186,
-    "red_3h": 0.02,
+    "rain_1h": 0.85,
+    "amber_3h": 0.402,
+    "red_3h": 0.37,
     "tc3_6h": 0.24
   },
-  "v3_grid_ts": "202608182118",
+  "v3_grid_ts": "202608182206",
   "official_levels": {},
   "tc": null,
   "tc_scanned": [],
