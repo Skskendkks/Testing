@@ -1,11 +1,11 @@
 {
-  "ts": "2026-08-18T19:35:02+00:00",
-  "temp_mean": 28.2,
-  "hum_mean": 81.0,
-  "rain_total": 0,
-  "rain_main": 0,
-  "rain_1h": -23.0,
-  "rain_3h": 0.0,
+  "ts": "2026-08-18T20:34:22+00:00",
+  "temp_mean": 28.3,
+  "hum_mean": 77.0,
+  "rain_total": 6,
+  "rain_main": 2,
+  "rain_1h": 6.0,
+  "rain_3h": 1.0,
   "active_warnings": [
     "Strong Monsoon Signal (ISSUE)"
   ],
@@ -13,12 +13,12 @@
     "Strong winds are expected from the east. The public should beware of the possible danger brought by rough seas."
   ],
   "predictions": {
-    "rain_1h": 0.1,
-    "amber_3h": 0.019,
+    "rain_1h": 0.6,
+    "amber_3h": 0.018,
     "red_3h": 0.02,
     "tc3_6h": 0.24
   },
-  "v3_grid_ts": "202608190354",
+  "v3_grid_ts": "202608190442",
   "official_levels": {},
   "tc": null,
   "tc_scanned": [],
