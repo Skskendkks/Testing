@@ -3,9 +3,9 @@
     "WMSGNL": {
       "name": "Strong Monsoon Signal",
       "code": "WMSGNL",
-      "actionCode": "ISSUE",
+      "actionCode": "CANCEL",
       "issueTime": "2026-08-18T22:10:00+08:00",
-      "updateTime": "2026-08-18T22:10:00+08:00"
+      "updateTime": "2026-08-20T07:10:00+08:00"
     }
   },
   "levels": {}
