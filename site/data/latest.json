@@ -1,22 +1,22 @@
 {
-  "ts": "2026-08-19T19:33:48+00:00",
+  "ts": "2026-08-19T20:38:47+00:00",
   "temp_mean": 28.1,
-  "hum_mean": 87.0,
-  "rain_total": 22,
-  "rain_main": 4,
-  "rain_1h": -5.0,
-  "rain_3h": 9.0,
+  "hum_mean": 85.0,
+  "rain_total": 11,
+  "rain_main": 2,
+  "rain_1h": 0.0,
+  "rain_3h": -16.0,
   "active_warnings": [
     "Strong Monsoon Signal (ISSUE)"
   ],
   "special_tips": [],
   "predictions": {
-    "rain_1h": 0.2,
-    "amber_3h": 0.022,
+    "rain_1h": 0.1,
+    "amber_3h": 0.02,
     "red_3h": 0.02,
     "tc3_6h": 0.24
   },
-  "v3_grid_ts": "202608200342",
+  "v3_grid_ts": "202608200454",
   "official_levels": {},
   "tc": null,
   "tc_scanned": [],
