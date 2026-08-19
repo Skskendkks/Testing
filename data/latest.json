@@ -1,7 +1,7 @@
 {
-  "ts": "2026-08-19T09:43:17+00:00",
-  "temp_mean": 30.7,
-  "hum_mean": 69.0,
+  "ts": "2026-08-19T10:39:04+00:00",
+  "temp_mean": 30.2,
+  "hum_mean": 70.0,
   "rain_total": 0,
   "rain_main": 0,
   "rain_1h": 0.0,
@@ -10,15 +10,15 @@
     "Strong Monsoon Signal (ISSUE)"
   ],
   "special_tips": [
-    "Hot weather might cause adverse health effects. The public should stay on the alert and drink more water."
+    "The area of low pressure over the northern part of the South China Sea is moving westwards steadily and edging closer to the vicinity of Hainan Island. Its structure remains relatively loose and it has not yet developed into a tropical cyclone. According to the present forecast, the area of low pressure will continue to depart from Hong Kong and move across Hainan Island tomorrow (20 August). Under the combined effect of the ridge of high pressure over the coast of southeastern China and the area of low pressure, it will be windier with showers over the coast of Guangdong. \n\nThere are relatively large uncertainties in the movement of the area of low pressure after moving across Hainan Island. It may move northwards edging closer to the vicinity of Beibu Wan to Leizhou Peninsula towards the weekend. There is also a chance of recurving to the east and edging closer to the coast of Guangdong. The Observatory will closely monitor its intensity and movement, and assess the need for issuing the Standby Signal, No. 1 by then. Members of the public should take note of the latest weather information issued by the Observatory."
   ],
   "predictions": {
-    "rain_1h": 0.2,
+    "rain_1h": 0.1,
     "amber_3h": 0.017,
     "red_3h": 0.02,
     "tc3_6h": 0.24
   },
-  "v3_grid_ts": "202608191754",
+  "v3_grid_ts": "202608191854",
   "official_levels": {},
   "tc": null,
   "tc_scanned": [],
