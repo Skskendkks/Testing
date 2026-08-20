@@ -1,11 +1,12 @@
 {
   "warnsum": {
-    "WMSGNL": {
-      "name": "Strong Monsoon Signal",
-      "code": "WMSGNL",
-      "actionCode": "CANCEL",
-      "issueTime": "2026-08-18T22:10:00+08:00",
-      "updateTime": "2026-08-20T07:10:00+08:00"
+    "WTS": {
+      "name": "Thunderstorm Warning",
+      "code": "WTS",
+      "actionCode": "ISSUE",
+      "issueTime": "2026-08-20T08:40:00+08:00",
+      "expireTime": "2026-08-20T10:30:00+08:00",
+      "updateTime": "2026-08-20T08:40:00+08:00"
     }
   },
   "levels": {}
