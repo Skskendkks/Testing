@@ -1,22 +1,22 @@
 {
-  "ts": "2026-08-20T15:43:08+00:00",
+  "ts": "2026-08-20T16:46:40+00:00",
   "temp_mean": 26.4,
-  "hum_mean": 92.0,
-  "rain_total": 22,
-  "rain_main": 2,
-  "rain_1h": -10.0,
-  "rain_3h": -9.0,
-  "active_warnings": [],
-  "special_tips": [
-    "The area of low pressure over Beibu Wan has intensified into a tropical depression. According to the present forecast, the tropical cyclone will linger over Beibu Wan in the next couple of days, maintaining quite some distance from the Pearl River Estuary. There are uncertainties in its subsequent movement, with a chance of recurving to the east and edging closer to the coast of Guangdong. The Observatory will closely monitor its intensity and movement. Members of the public should take note of the latest weather information from the Observatory."
+  "hum_mean": 93.0,
+  "rain_total": 21,
+  "rain_main": 3,
+  "rain_1h": 0.0,
+  "rain_3h": -10.0,
+  "active_warnings": [
+    "Thunderstorm Warning (ISSUE)"
   ],
+  "special_tips": [],
   "predictions": {
-    "rain_1h": 0.3,
-    "amber_3h": 0.025,
+    "rain_1h": 0.45,
+    "amber_3h": 0.258,
     "red_3h": 0.02,
     "tc3_6h": 0.24
   },
-  "v3_grid_ts": "202608202354",
+  "v3_grid_ts": "202608210054",
   "official_levels": {},
   "tc": null,
   "tc_scanned": [],
