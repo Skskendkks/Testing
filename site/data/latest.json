@@ -1,24 +1,22 @@
 {
-  "ts": "2026-08-20T01:46:26+00:00",
-  "temp_mean": 28.1,
-  "hum_mean": 82.0,
-  "rain_total": 8,
-  "rain_main": 4,
+  "ts": "2026-08-20T03:05:56+00:00",
+  "temp_mean": 27.5,
+  "hum_mean": 88.0,
+  "rain_total": 60,
+  "rain_main": 12,
   "rain_1h": 0.0,
-  "rain_3h": -68.0,
+  "rain_3h": 52.0,
   "active_warnings": [
-    "Thunderstorm Warning (ISSUE)"
+    "Thunderstorm Warning (EXTEND)"
   ],
-  "special_tips": [
-    "Areas of intense showers over the seas south and east of Hong Kong are edging closer gradually. They are expected to affect the territory in the next couple of hours. Members of the public please be aware of the change in weather."
-  ],
+  "special_tips": [],
   "predictions": {
     "rain_1h": 0.25,
-    "amber_3h": 0.197,
-    "red_3h": 0.02,
+    "amber_3h": 0.357,
+    "red_3h": 0.22,
     "tc3_6h": 0.24
   },
-  "v3_grid_ts": "202608200954",
+  "v3_grid_ts": "202608201118",
   "official_levels": {},
   "tc": null,
   "tc_scanned": [],
