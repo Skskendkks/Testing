@@ -1,22 +1,22 @@
 {
-  "ts": "2026-08-21T05:41:36+00:00",
-  "temp_mean": 30.0,
-  "hum_mean": 78.0,
-  "rain_total": 2,
-  "rain_main": 2,
-  "rain_1h": -1.0,
-  "rain_3h": -6.0,
+  "ts": "2026-08-21T07:01:55+00:00",
+  "temp_mean": 30.7,
+  "hum_mean": 72.0,
+  "rain_total": 0,
+  "rain_main": 0,
+  "rain_1h": 0.0,
+  "rain_3h": -3.0,
   "active_warnings": [],
   "special_tips": [
-    "The tropical depression over Beibu Wan has intensified into a tropical storm. According to the latest forecast, the tropical storm will linger over Beibu Wan tomorrow. It will then have a higher chance to turn east to northeastwards gradually early next week, edging closer to the vicinity of Leizhou Peninsula and the coast of western Guangdong. The Observatory will closely monitor its movement and the change in local wind conditions, and assess the need for issuing tropical cyclone warning signals early next week. Members of the public should take note of the latest weather information."
+    "Hot weather might cause adverse health effects. The public should stay on the alert and drink more water."
   ],
   "predictions": {
     "rain_1h": 0.1,
-    "amber_3h": 0.018,
+    "amber_3h": 0.017,
     "red_3h": 0.02,
     "tc3_6h": 0.24
   },
-  "v3_grid_ts": "202608211354",
+  "v3_grid_ts": "202608211518",
   "official_levels": {},
   "tc": null,
   "tc_scanned": [],
