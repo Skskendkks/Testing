@@ -1,26 +1,26 @@
 {
-  "n_total": 240753,
-  "generated": "2026-08-21T04:05:29",
+  "n_total": 240776,
+  "generated": "2026-08-22T04:00:35",
   "targets": {
     "rain_1h": {
-      "n_samples": 239462,
-      "n_pos": 25,
-      "n_val": 47893,
-      "n_val_pos": 25,
+      "n_samples": 239475,
+      "n_pos": 28,
+      "n_val": 47895,
+      "n_val_pos": 28,
       "status": "skipped (a fold has a single class \u2014 need more positives)"
     },
     "amber_3h": {
-      "n_samples": 240656,
+      "n_samples": 240678,
       "n_pos": 3152,
-      "n_val": 48132,
+      "n_val": 48136,
       "n_val_pos": 836,
       "lr": {
         "pr_auc": 0.2524,
         "brier": 0.0929
       },
       "trees": {
-        "pr_auc": 0.2385,
-        "brier": 0.0673
+        "pr_auc": 0.249,
+        "brier": 0.0683
       },
       "model": "lr",
       "calibrated": true,
@@ -39,9 +39,9 @@
       "status": "shipped"
     },
     "red_3h": {
-      "n_samples": 240656,
+      "n_samples": 240678,
       "n_pos": 592,
-      "n_val": 48132,
+      "n_val": 48136,
       "n_val_pos": 172,
       "lr": {
         "pr_auc": 0.1368,
@@ -66,21 +66,21 @@
       "status": "rules-only (did not beat persistence baseline)"
     },
     "tc3_6h": {
-      "n_samples": 240717,
+      "n_samples": 240740,
       "n_pos": 2806,
-      "n_val": 48144,
+      "n_val": 48148,
       "n_val_pos": 788,
       "lr": {
         "pr_auc": 0.0536,
-        "brier": 0.2206
+        "brier": 0.2208
       },
       "trees": {
-        "pr_auc": 0.0565,
-        "brier": 0.1247
+        "pr_auc": 0.0589,
+        "brier": 0.1266
       },
       "model": "trees",
       "calibrated": true,
-      "pr_auc": 0.0565,
+      "pr_auc": 0.0589,
       "brier": 0.0158,
       "persistence": {
         "pr_auc": 0.6863,
@@ -95,6 +95,6 @@
   },
   "train_range": [
     "1998-01-01T00:00:00+00:00",
-    "2026-08-21T03:12:03+00:00"
+    "2026-08-22T03:50:47+00:00"
   ]
 }
